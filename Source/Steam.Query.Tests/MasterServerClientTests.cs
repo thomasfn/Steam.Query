@@ -11,7 +11,17 @@ namespace Steam.Query.Tests
         public void BasicQuery()
         {
             var client = new MasterServer();
-            var t = client.GetServers(MasterServerRegion.All, MasterServerFilter.Gamedir("arma2arrowpc"));
+            var t = client.GetServersAsync(MasterServerRegion.All, MasterServerFilter.Gamedir("arma2arrowpc"));
+            t.Wait(TimeSpan.FromSeconds(10));
+
+            Assert.IsTrue(t.Result.Any(), "No servers were returned");
+        }
+
+        [Test]
+        public void MultiFilterQuery()
+        {
+            var client = new MasterServer();
+            var t = client.GetServersAsync(MasterServerRegion.All, MasterServerFilter.Gamedir("arma2arrowpc"), MasterServerFilter.NotApp("500"));
             t.Wait(TimeSpan.FromSeconds(10));
 
             Assert.IsTrue(t.Result.Any(), "No servers were returned");

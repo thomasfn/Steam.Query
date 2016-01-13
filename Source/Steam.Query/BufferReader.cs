@@ -4,26 +4,28 @@ using System.Text;
 
 namespace Steam.Query
 {
-    public class ResponseParser
+    public class BufferReader
     {
         private readonly byte[] _bytes;
 
-        public ResponseParser(byte[] bytes)
+        public BufferReader(byte[] bytes)
         {
             _bytes = bytes;
         }
 
-        public byte GetByte()
+        public byte ReadByte()
         {
             return _bytes[CurrentPosition++];
         }
 
-        public bool BytesLeft
+        public bool HasUnreadBytes => _bytes.Length - 1 >= CurrentPosition;
+
+        public void Skip(int i)
         {
-            get { return _bytes.Length - 1 >= CurrentPosition; }
+            CurrentPosition += i;
         }
 
-        public string GetStringToTermination()
+        public string ReadString()
         {
             var buffer = new List<byte>();
             for (;CurrentPosition < _bytes.Length; CurrentPosition++)
@@ -42,7 +44,7 @@ namespace Steam.Query
             return Encoding.ASCII.GetString(buffer.ToArray());
         }
 
-        public Int32 GetShort()
+        public ushort ReadShort()
         {
             return BitConverter.ToUInt16(new[]
             {
@@ -51,9 +53,9 @@ namespace Steam.Query
             }, 0);
         }
 
-        public string GetStringOfByte()
+        public char ReadChar()
         {
-            return Encoding.ASCII.GetString(new [] { _bytes[CurrentPosition++] });
+            return Encoding.ASCII.GetChars(_bytes, CurrentPosition++, 1)[0];
         }
 
         public int CurrentPosition { get; set; }

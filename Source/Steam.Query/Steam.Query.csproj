@@ -43,10 +43,11 @@
     <Compile Include="MasterServerFilter.cs" />
     <Compile Include="MasterServerRegion.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="ResponseParser.cs" />
+    <Compile Include="BufferReader.cs" />
     <Compile Include="Server.cs" />
-    <Compile Include="ServerInfoResult.cs" />
-    <Compile Include="ServerRulesResult.cs" />
+    <Compile Include="ServerInfo.cs" />
+    <Compile Include="ServerQueryPacketType.cs" />
+    <Compile Include="ServerRules.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Steam.Query.nuspec" />

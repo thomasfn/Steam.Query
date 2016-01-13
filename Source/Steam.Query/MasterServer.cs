@@ -10,9 +10,12 @@ namespace Steam.Query
     public partial class MasterServer
     {
         private const string FIRST_AND_LAST_SERVER = "0.0.0.0:0";
-        private const int HEADER_BYTES_LENGTH = 6;
-        private readonly IPAddress _steamSteamIpAddress;
-        private readonly int _steamSteamPort;
+
+        private static readonly IPEndPoint NullEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 0);
+
+        private const int ADDRESS_LENGTH = 6;
+        private readonly IPAddress _steamIpAddress;
+        private readonly int _steamPort;
 
         public MasterServer()
             : this("hl2master.steampowered.com", 27011)
@@ -21,12 +24,11 @@ namespace Steam.Query
 
         public MasterServer(string hostname, int steamPort)
         {
-            _steamSteamIpAddress = Dns.GetHostEntry(hostname).AddressList[0];
-            _steamSteamPort = steamPort;
+            _steamIpAddress = Dns.GetHostEntry(hostname).AddressList[0];
+            _steamPort = steamPort;
         }
-
-#if NET45
-        public async Task<IEnumerable<Server>> GetServers(
+        
+        public async Task<IEnumerable<Server>> GetServersAsync(
             MasterServerRegion region = MasterServerRegion.All,
             params MasterServerFilter[] masterServerFilters)
         {
@@ -34,25 +36,26 @@ namespace Steam.Query
 
             using (var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
             {
-                client.Connect(_steamSteamIpAddress, _steamSteamPort);
+                client.Connect(_steamIpAddress, _steamPort);
 
-                string thisServer = null;
-                while (thisServer != FIRST_AND_LAST_SERVER)
+                IPEndPoint lastServer = null;
+                while (!NullEndPoint.Equals(lastServer))
                 {
-                    var requestPacket = CreateRequestPacket(thisServer ?? FIRST_AND_LAST_SERVER, region, masterServerFilters);
+                    var requestPacket = CreateRequestPacket(lastServer ?? NullEndPoint, region, masterServerFilters);
                     await client.SendAsync(requestPacket, requestPacket.Length);
+
                     var response = await client.ReceiveAsync();
                     var responseData = response.Buffer.ToList();
-                    for (int i = HEADER_BYTES_LENGTH; i < responseData.Count; i++)
+                    for (var i = ADDRESS_LENGTH; i < responseData.Count; i += ADDRESS_LENGTH)
                     {
-                        var ip = string.Join(".", responseData.GetRange(i, 4).ToArray());
-                        int port = responseData[i + 4] << 8 | responseData[i + 5];
-                        thisServer = string.Format("{0}:{1}", ip, port);
-                        if (thisServer != FIRST_AND_LAST_SERVER)
+                        var ip = new IPAddress(responseData.GetRange(i, 4).ToArray());
+                        var port = responseData[i + 4] << 8 | responseData[i + 5];
+                        lastServer = new IPEndPoint(ip, port);
+                        
+                        if (!lastServer.Equals(NullEndPoint))
                         {
-                            servers.Add(new Server(new IPEndPoint(IPAddress.Parse(ip), port)));
+                            servers.Add(new Server(lastServer));
                         }
-                        i += 5;
                     }
                 }
             }
@@ -60,15 +63,15 @@ namespace Steam.Query
             return servers;
         }
 
-        private static byte[] CreateRequestPacket(string ipAddress, MasterServerRegion region, IEnumerable<MasterServerFilter> filters)
+        private static byte[] CreateRequestPacket(IPEndPoint lastServerEndPoint, MasterServerRegion region, IEnumerable<MasterServerFilter> filters)
         {
             var buffer = new List<byte> { 0x31, (byte)region };
-            buffer.AddRange(System.Text.Encoding.ASCII.GetBytes(ipAddress));
-            buffer.Add(0x00);
-            var filtersString = string.Join("", filters.Select(x => x.Key + "\\" + x.Value));
+            buffer.AddRange(System.Text.Encoding.ASCII.GetBytes(lastServerEndPoint.ToString()));
+            buffer.Add(0x00); 
+            var filtersString = string.Join("\\", filters.Select(x => x.Key + "\\" + x.Value));
             buffer.AddRange(System.Text.Encoding.ASCII.GetBytes(filtersString));
             return buffer.ToArray();
         }
-#endif
+
     }
 }

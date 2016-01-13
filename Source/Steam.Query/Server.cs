@@ -8,8 +8,9 @@ using System.Threading.Tasks;
 
 namespace Steam.Query
 {
-    public partial class Server
+    public class Server
     {
+        
         public Server(IPEndPoint endPoint)
         {
             EndPoint = endPoint;
@@ -17,94 +18,81 @@ namespace Steam.Query
 
         public IPEndPoint EndPoint { get; private set; }
 
-#if NET45
-        public async Task<ServerRulesResult> GetServerRules()
+        private UdpClient GetLocalEndpointUdpClient()
         {
-            using (var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
+            var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
+            client.Connect(EndPoint);
+
+            return client;
+        }
+
+        private List<byte> GetRequestPacket(ServerQueryPacketType packetType, IEnumerable<byte> bytes)
+        {
+            var requestPacket = new List<byte> { 0xFF, 0xFF, 0xFF, 0xFF, (byte)packetType };
+            requestPacket.AddRange(bytes);
+
+            return requestPacket;
+        }
+        
+        private async Task SendAsync(UdpClient client, IEnumerable<byte> datagramEnumerable)
+        {
+            var datagram = datagramEnumerable as byte[] ?? datagramEnumerable.ToArray();
+
+            await client.SendAsync(datagram, datagram.Length);
+        }
+        
+        public async Task<ServerRules> GetServerRulesAsync()
+        {
+            using (var client = GetLocalEndpointUdpClient())
             {
-                client.Connect(EndPoint);
-                var requestPacket = new List<byte>();
-                requestPacket.AddRange(new Byte[] {0xFF, 0xFF, 0xFF, 0xFF, 0x56});
-                requestPacket.AddRange(BitConverter.GetBytes(-1));
-                await client.SendAsync(requestPacket.ToArray(), requestPacket.ToArray().Length);
-                UdpReceiveResult response = await client.ReceiveAsync();
-                List<byte> responseData = response.Buffer.ToList();
-                requestPacket.Clear();
-                requestPacket.AddRange(new Byte[] {0xFF, 0xFF, 0xFF, 0xFF, 0x56});
-                requestPacket.AddRange(responseData.GetRange(5, 4));
-                await client.SendAsync(requestPacket.ToArray(), requestPacket.ToArray().Length);
+                var requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, BitConverter.GetBytes(-1));
+                await SendAsync(client, requestPacket);
+
+                var response = await client.ReceiveAsync();
+                var responseType = (ServerQueryPacketType) response.Buffer[4];
+
+                if (responseType == ServerQueryPacketType.RulesResponse)
+                    throw new NotImplementedException();
+
+                if (responseType != ServerQueryPacketType.RulesChallenge)
+                    throw new ProtocolViolationException();
+                
+                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, response.Buffer.Skip(5).Take(4)); //reply with challenge number
+                await SendAsync(client, requestPacket);
+                
                 response = await client.ReceiveAsync();
-                return ServerRulesResult.Parse(response.Buffer);
+                responseType = (ServerQueryPacketType)response.Buffer[16]; //seems not to agree with protocol, would expect this 11 bytes earlier...
+
+                if (responseType != ServerQueryPacketType.RulesResponse)
+                    throw new ProtocolViolationException();
+                
+                return ServerRules.Parse(response.Buffer); //TODO: handle multi-packet responses, which should include... most of them
             }
         }
-#endif
-
-        public ServerRulesResult GetServerRulesSync(GetServerInfoSettings settings)
+        
+        public async Task<ServerInfo> GetServerInfoAsync()
         {
-            var localEndpoint = new IPEndPoint(IPAddress.Any, 0);
-            using (var client = new UdpClient(localEndpoint))
+            using (var client = GetLocalEndpointUdpClient())
             {
-                client.Client.ReceiveTimeout = settings.ReceiveTimeout;
-                client.Client.SendTimeout = settings.SendTimeout;
-
-                client.Connect(EndPoint);
-                var requestPacket = new List<byte>();
-                requestPacket.AddRange(new Byte[] {0xFF, 0xFF, 0xFF, 0xFF, 0x56});
-                requestPacket.AddRange(BitConverter.GetBytes(-1));
-                client.Send(requestPacket.ToArray(), requestPacket.ToArray().Length);
-                byte[] responseData = client.Receive(ref localEndpoint);
-                requestPacket.Clear();
-                requestPacket.AddRange(new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF, 0x56 });
-                requestPacket.AddRange(responseData.Skip(5).Take(4));
-                client.Send(requestPacket.ToArray(), requestPacket.ToArray().Length);
-                responseData = client.Receive(ref localEndpoint);
-                return ServerRulesResult.Parse(responseData);
-            }
-        }
-
-#if NET45
-        public async Task<ServerInfoResult> GetServerInfo()
-        {
-            using (var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
-            {
-                client.Connect(EndPoint);
-                var requestPacket = new List<byte>();
-                requestPacket.AddRange(new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF});
-                requestPacket.Add(0x54);
-                requestPacket.AddRange(Encoding.ASCII.GetBytes("Source Engine Query"));
+                var requestPacket = GetRequestPacket(ServerQueryPacketType.InfoRequest, Encoding.ASCII.GetBytes("Source Engine Query"));
                 requestPacket.Add(0x00);
-                await client.SendAsync(requestPacket.ToArray(), requestPacket.ToArray().Length);
-                UdpReceiveResult response = await client.ReceiveAsync();
-                return ServerInfoResult.Parse(response.Buffer);
+
+                await SendAsync(client, requestPacket);
+
+                var response = await client.ReceiveAsync();
+
+                var responseType = (ServerQueryPacketType)response.Buffer[4];
+
+                if (responseType != ServerQueryPacketType.InfoResponse)
+                    throw new ProtocolViolationException();
+
+                return ServerInfo.Parse(response.Buffer);
             }
         }
-#endif
-
-        public ServerInfoResult GetServerInfoSync(GetServerInfoSettings settings)
+        
+        public override string ToString()
         {
-            var localEndPoint = new IPEndPoint(IPAddress.Any, 0);
-            using (var client = new UdpClient(localEndPoint))
-            {
-                client.Client.ReceiveTimeout = settings.ReceiveTimeout;
-                client.Client.SendTimeout = settings.SendTimeout;
-
-                client.Connect(EndPoint);
-                var requestPacket = new List<byte>();
-                requestPacket.AddRange(new Byte[] { 0xFF, 0xFF, 0xFF, 0xFF });
-                requestPacket.Add(0x54);
-                requestPacket.AddRange(Encoding.ASCII.GetBytes("Source Engine Query"));
-                requestPacket.Add(0x00);
-                var requestData = requestPacket.ToArray();
-                client.Send(requestData, requestData.Length);
-                byte[] data = client.Receive(ref localEndPoint);
-                return ServerInfoResult.Parse(data);
-            }
-        }
-
-        public class GetServerInfoSettings
-        {
-            public int SendTimeout = 2000;
-            public int ReceiveTimeout = 2000;
+            return EndPoint.ToString();
         }
     }
 }

@@ -17,71 +17,52 @@ namespace Steam.Query.Tests
         public void Setup()
         {
             var client = new MasterServer();
-            var t = client.GetServers(MasterServerRegion.All, MasterServerFilter.Gamedir("arma2arrowpc"));
-            t.Wait(TimeSpan.FromSeconds(10));
-            _servers = t.Result.ToList();
+            _servers = client.GetServersAsync(MasterServerRegion.Europe, MasterServerFilter.Gamedir("tf"), MasterServerFilter.NameMatch("Valve*")).Result.ToList();
+            ;
         }
 
         [Test]
         public void GetServerRulesAsync()
         {
-            for (var i = 0; i < 10; i++)
+            if (!_servers.Any())
+                Assert.Inconclusive();
+
+            for (var i = 0; i < 1; i++)
             {
-                var t = _servers[i].GetServerRules();
+                var t = _servers[i].GetServerRulesAsync();
 
                 if (t.Wait(TimeSpan.FromSeconds(3)))
                 {
-                    Assert.That(t.Result.Keys.Count, Is.GreaterThan(2));
+                    Assert.That(t.Result.Rules.Count(), Is.GreaterThan(2));
                     return;
                 }
             }
-            Assert.Fail("Tried 10 servers and nothing came back....");
-        }
 
-        [Test]
-        public void GetServerRulesSync()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                try
-                {
-                    var result = _servers[i].GetServerRulesSync(new Server.GetServerInfoSettings());
-                    Assert.That(result.Keys.Count, Is.GreaterThan(2));
-                    return;
-                }
-                catch (SocketException){}
-            }
             Assert.Fail("Tried 10 servers and nothing came back....");
         }
 
         [Test]
         public void GetServerInfoAsync()
         {
+            if (!_servers.Any())
+                Assert.Inconclusive();
+
             for (var i = 0; i < 10; i++)
             {
-                var t = _servers[i].GetServerInfo();
+                var t = _servers[i].GetServerInfoAsync();
 
                 if (t.Wait(TimeSpan.FromSeconds(3)))
                 {
-                    Assert.That(t.Result.Name.Length, Is.GreaterThan(2));
-                    return;
-                }
-            }
-            Assert.Fail("Tried 10 servers and nothing came back....");
-        }
 
-        [Test]
-        public void GetServerInfoSync()
-        {
-            for (var i = 0; i < 10; i++)
-            {
-                try
-                {
-                    var result = _servers[i].GetServerInfoSync(new Server.GetServerInfoSettings());
-                    Assert.That(result.Name.Length, Is.GreaterThan(2));
+                    var server = t.Result;
+
+                    Assert.That(server.Folder, Is.EqualTo("tf"));
+                    Assert.That(new[] {'w', 'l', 'm', 'o'}.Contains(server.Environment));
+                    Assert.That(new[] {'d', 'l', 'p'}.Contains(server.Type));
+                    Assert.That(server.Name, Is.StringStarting("Valve"));
+
                     return;
                 }
-                catch (SocketException) { }
             }
             Assert.Fail("Tried 10 servers and nothing came back....");
         }

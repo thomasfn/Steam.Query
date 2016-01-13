@@ -92,11 +92,12 @@
         }
 
         /// <summary>
-        /// Servers that are whitelisted
+        /// Servers whose name matches the given string
+        /// <param name="filter">The name to match - * is used as wildcard</param>
         /// </summary>
-        public static MasterServerFilter White()
+        public static MasterServerFilter NameMatch(string filter)
         {
-            return new MasterServerFilter("white", "1");
+            return new MasterServerFilter("name_match", filter);
         }
     }
 }
