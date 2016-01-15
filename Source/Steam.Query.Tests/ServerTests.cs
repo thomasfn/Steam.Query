@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Diagnostics;
 using System.Linq;
-using System.Net;
-using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using NUnit.Framework;
 
 namespace Steam.Query.Tests
@@ -31,14 +29,23 @@ namespace Steam.Query.Tests
             {
                 var t = _servers[i].GetServerRulesAsync();
 
-                if (t.Wait(TimeSpan.FromSeconds(3)))
+                if (t.Wait(TimeSpan.FromSeconds(5)))
                 {
-                    Assert.That(t.Result.Rules.Count(), Is.GreaterThan(2));
+                    var rules = t.Result.Rules.ToList();
+
+                    Assert.That(rules.Count > 20);
+                    Assert.That(rules.All(x => IsValidRuleString(x.Key)));
                     return;
                 }
             }
 
             Assert.Fail("Tried 10 servers and nothing came back....");
+        }
+
+        private static readonly Regex RuleStringRegex = new Regex(@"^[A-Za-z0-9;,\.\-_]+$");
+        private bool IsValidRuleString(string s)
+        {
+            return RuleStringRegex.IsMatch(s);
         }
 
         [Test]

@@ -2,8 +2,6 @@
 
 namespace Steam.Query
 {
-    using System;
-
     public class ServerRules
     {
 

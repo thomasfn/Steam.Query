@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Steam.Query
+﻿namespace Steam.Query
 {
     public class ServerInfo
     {

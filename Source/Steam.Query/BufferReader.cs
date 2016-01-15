@@ -1,12 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using System.Text;
 
 namespace Steam.Query
 {
-    using System.IO;
-    using System.Linq;
-
     public class BufferReader
     {
         private readonly byte[] _bytes;

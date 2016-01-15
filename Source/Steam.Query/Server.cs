@@ -8,8 +8,6 @@ using System.Threading.Tasks;
 
 namespace Steam.Query
 {
-    using System.Runtime.CompilerServices;
-
     public class Server
     {
         
