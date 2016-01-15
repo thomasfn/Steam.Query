@@ -17,15 +17,21 @@ namespace Steam.Query
 
         public int CurrentPosition { get; private set; }
 
-        public bool HasUnreadBytes => _bytes.Length - 1 >= CurrentPosition;
-
         public int Remaining => _bytes.Length - CurrentPosition;
 
         public byte ReadByte()
         {
             return _bytes[CurrentPosition++];
         }
-        
+
+        public IEnumerable<byte> ReadBytes(int length)
+        {
+            var segment = new ArraySegment<byte>(_bytes, CurrentPosition, length);
+            CurrentPosition += length;
+
+            return segment;
+        }
+
         public void Skip(int i)
         {
             CurrentPosition += i;
@@ -62,9 +68,9 @@ namespace Steam.Query
             return str;
         }
 
-        public short ReadShort()
+        public ushort ReadShort()
         {
-            var n = BitConverter.ToInt16(_bytes, CurrentPosition);
+            var n = BitConverter.ToUInt16(_bytes, CurrentPosition);
             CurrentPosition += 2;
 
             return n;
@@ -82,15 +88,7 @@ namespace Steam.Query
         {
             return Encoding.ASCII.GetChars(new[] {ReadByte()}, 0, 1).Single();
         }
-
-        public ArraySegment<byte> ReadSegment(int length)
-        {
-            var segment =  new ArraySegment<byte>(_bytes, CurrentPosition, length);
-            CurrentPosition += length;
-
-            return segment;
-        }
-
+        
         public IEnumerable<byte> ReadUntil(Func<byte, bool> predicate)
         {
             var bytes = _bytes.Skip(CurrentPosition).TakeWhile(predicate).ToList();

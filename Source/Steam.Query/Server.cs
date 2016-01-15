@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace Steam.Query
 {
-    public class Server
+    public sealed class Server : SteamAgentBase
     {
         
         public Server(IPEndPoint endPoint)
@@ -18,46 +18,26 @@ namespace Steam.Query
 
         public IPEndPoint EndPoint { get; private set; }
 
-        private UdpClient GetLocalEndpointUdpClient()
-        {
-            var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0));
-            client.Connect(EndPoint);
+        public static readonly byte[] ServerQueryHeader = {0xFF, 0xFF, 0xFF, 0xFF};
 
-            return client;
+        private static BufferBuilder GetRequestPacket(ServerQueryPacketType packetType)
+        {
+            var builder = new BufferBuilder();
+            builder.WriteBytes(ServerQueryHeader);
+            builder.WriteByte((byte)packetType);
+            
+            return builder;
         }
 
-        private List<byte> GetRequestPacket(ServerQueryPacketType packetType, IEnumerable<byte> bytes)
-        {
-            var requestPacket = new List<byte> { 0xFF, 0xFF, 0xFF, 0xFF, (byte)packetType };
-            requestPacket.AddRange(bytes);
-
-            return requestPacket;
-        }
-        
-        private async Task SendAsync(UdpClient client, IEnumerable<byte> datagramEnumerable)
-        {
-            var datagram = datagramEnumerable as byte[] ?? datagramEnumerable.ToArray();
-
-            await client.SendAsync(datagram, datagram.Length);
-        }
-
-        private async Task<BufferReader> ReceiveBufferReaderAsync(UdpClient client, int headerSize)
-        {
-            var response = await client.ReceiveAsync();
-            var reader = new BufferReader(response.Buffer);
-            reader.Skip(headerSize);
-
-            return reader;
-        }
-        
         public async Task<ServerRules> GetServerRulesAsync()
         {
-            using (var client = GetLocalEndpointUdpClient())
+            using (var client = GetUdpClient(EndPoint))
             {
-                var requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, BitConverter.GetBytes(-1));
-                await SendAsync(client, requestPacket);
+                var requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest);
+                requestPacket.WriteLong(-1);
 
-                var reader = await ReceiveBufferReaderAsync(client, 4);
+                var reader = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
+
                 var responseType = (ServerQueryPacketType) reader.ReadByte();
 
                 if (responseType == ServerQueryPacketType.RulesResponse)
@@ -66,12 +46,11 @@ namespace Steam.Query
                 if (responseType != ServerQueryPacketType.RulesChallenge)
                     throw new ProtocolViolationException();
 
-                var challengeNumber = reader.ReadSegment(4);
-                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, challengeNumber); 
+                var challengeNumber = reader.ReadLong();
+                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest); 
+                requestPacket.WriteLong(challengeNumber);
 
-                await SendAsync(client, requestPacket);
-
-                reader = await ReceiveBufferReaderAsync(client, 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
+                await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
 
                 responseType = (ServerQueryPacketType) reader.ReadByte();
 
@@ -105,21 +84,19 @@ namespace Steam.Query
 
         public async Task<ServerInfo> GetServerInfoAsync()
         {
-            using (var client = GetLocalEndpointUdpClient())
+            using (var client = GetUdpClient(EndPoint))
             {
-                var requestPacket = GetRequestPacket(ServerQueryPacketType.InfoRequest, Encoding.ASCII.GetBytes("Source Engine Query"));
-                requestPacket.Add(0x00);
+                var requestPacket = GetRequestPacket(ServerQueryPacketType.InfoRequest);
+                requestPacket.WriteString("Source Engine Query");
 
-                await SendAsync(client, requestPacket);
+                var response = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
-                var response = await client.ReceiveAsync();
-
-                var responseType = (ServerQueryPacketType)response.Buffer[4];
+                var responseType = (ServerQueryPacketType) response.ReadByte();
 
                 if (responseType != ServerQueryPacketType.InfoResponse)
                     throw new ProtocolViolationException();
 
-                return ServerInfo.Parse(response.Buffer);
+                return ServerInfo.Parse(response);
             }
         }
         

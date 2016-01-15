@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace Steam.Query
 {
-    public class MultiPacketStringReader
+    internal class MultiPacketStringReader
     {
         private BufferReader _reader;
         private readonly Func<Task<BufferReader>> _sequelRequestAsyncFunc;
@@ -23,7 +23,7 @@ namespace Steam.Query
 
             while (!_reader.IsStringTerminated())
             {
-                byteEnumerables.Add(_reader.ReadSegment(_reader.Remaining));
+                byteEnumerables.Add(_reader.ReadBytes(_reader.Remaining));
                 _reader = await _sequelRequestAsyncFunc();
             }
 

@@ -39,8 +39,10 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="BufferBuilder.cs" />
     <Compile Include="MasterServer.cs" />
     <Compile Include="MasterServerFilter.cs" />
+    <Compile Include="MasterServerQueryPacketType.cs" />
     <Compile Include="MasterServerRegion.cs" />
     <Compile Include="MultiPacketStringReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -49,6 +51,7 @@
     <Compile Include="ServerInfo.cs" />
     <Compile Include="ServerQueryPacketType.cs" />
     <Compile Include="ServerRules.cs" />
+    <Compile Include="SteamAgentBase.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Steam.Query.nuspec" />

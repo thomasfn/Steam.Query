@@ -32,11 +32,12 @@ namespace Steam.Query.Tests
         [Test]
         public void ReadsSequentially()
         {
-            var reader = new BufferReader(new byte[] {10, 0, 10, 67, 65, 75, 69, 00, 2, 2, 0});
+            var reader = new BufferReader(new byte[] {10, 0, 10, 67, 65, 75, 69, 00, 00, 2, 2, 0});
             
             Assert.AreEqual(10, reader.ReadByte());
             Assert.AreEqual(2560, reader.ReadShort());
             Assert.AreEqual("CAKE", reader.ReadString());
+            Assert.AreEqual("", reader.ReadString());
             Assert.AreEqual(514, reader.ReadShort());
         }
 

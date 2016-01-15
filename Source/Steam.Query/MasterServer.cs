@@ -1,59 +1,60 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Sockets;
+using System.Text;
 using System.Threading.Tasks;
 
 namespace Steam.Query
 {
-    public partial class MasterServer
+    public sealed class MasterServer : SteamAgentBase
     {
-        private const string FIRST_AND_LAST_SERVER = "0.0.0.0:0";
-
+        private readonly IPEndPoint _endpoint;
         private static readonly IPEndPoint NullEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 0);
 
-        private const int ADDRESS_LENGTH = 6;
-        private readonly IPAddress _steamIpAddress;
-        private readonly int _steamPort;
+        private const int IpEndPointLength = 6;
 
         public MasterServer()
             : this("hl2master.steampowered.com", 27011)
         {
         }
 
-        public MasterServer(string hostname, int steamPort)
+        public MasterServer(string hostname, int port) 
+            : this(Dns.GetHostEntry(hostname).AddressList[0], port)
         {
-            _steamIpAddress = Dns.GetHostEntry(hostname).AddressList[0];
-            _steamPort = steamPort;
         }
-        
-        public async Task<IEnumerable<Server>> GetServersAsync(
-            MasterServerRegion region = MasterServerRegion.All,
-            params MasterServerFilter[] masterServerFilters)
+
+        public MasterServer(IPAddress ip, int port)
+            : this(new IPEndPoint(ip, port))
+        {
+        }
+
+        public MasterServer(IPEndPoint endpoint)
+        {
+            _endpoint = endpoint;
+        }
+
+        public async Task<IEnumerable<Server>> GetServersAsync(MasterServerRegion region = MasterServerRegion.All, params MasterServerFilter[] masterServerFilters)
         {
             var servers = new List<Server>();
-
-            using (var client = new UdpClient(new IPEndPoint(IPAddress.Any, 0)))
+            using (var client = GetUdpClient(_endpoint))
             {
-                client.Connect(_steamIpAddress, _steamPort);
+                IPEndPoint lastServerEndPoint = null;
 
-                IPEndPoint lastServer = null;
-                while (!NullEndPoint.Equals(lastServer))
+                while (!NullEndPoint.Equals(lastServerEndPoint))
                 {
-                    var requestPacket = CreateRequestPacket(lastServer ?? NullEndPoint, region, masterServerFilters);
-                    await client.SendAsync(requestPacket, requestPacket.Length);
+                    var request = GetRequest(lastServerEndPoint ?? NullEndPoint, region, masterServerFilters);
+                    var response = await RequestResponseAsync(client, request, IpEndPointLength);
 
-                    var response = await client.ReceiveAsync();
-                    var responseData = response.Buffer.ToList();
-                    for (var i = ADDRESS_LENGTH; i < responseData.Count; i += ADDRESS_LENGTH)
+                    while (response.Remaining >= IpEndPointLength)
                     {
-                        var ip = new IPAddress(responseData.GetRange(i, 4).ToArray());
-                        var port = responseData[i + 4] << 8 | responseData[i + 5];
-                        lastServer = new IPEndPoint(ip, port);
-                        
-                        if (!lastServer.Equals(NullEndPoint))
+                        lastServerEndPoint = ReadEndPoint(response);
+
+                        if (!lastServerEndPoint.Equals(NullEndPoint))
                         {
-                            servers.Add(new Server(lastServer));
+                            servers.Add(new Server(lastServerEndPoint));
                         }
                     }
                 }
@@ -62,14 +63,33 @@ namespace Steam.Query
             return servers;
         }
 
-        private static byte[] CreateRequestPacket(IPEndPoint lastServerEndPoint, MasterServerRegion region, IEnumerable<MasterServerFilter> filters)
+        private static IPEndPoint ReadEndPoint(BufferReader reader)
         {
-            var buffer = new List<byte> { 0x31, (byte)region };
-            buffer.AddRange(System.Text.Encoding.ASCII.GetBytes(lastServerEndPoint.ToString()));
-            buffer.Add(0x00); 
-            var filtersString = string.Join("\\", filters.Select(x => x.Key + "\\" + x.Value));
-            buffer.AddRange(System.Text.Encoding.ASCII.GetBytes(filtersString));
-            return buffer.ToArray();
+            var ipBytes = reader.ReadBytes(4);
+            var port = ReadNetworkOrderShort(reader);
+
+            return new IPEndPoint(new IPAddress(ipBytes.ToArray()), port);
+        }
+
+        private static byte[] GetRequest(IPEndPoint lastServerEndPoint, MasterServerRegion region, IEnumerable<MasterServerFilter> filters)
+        {
+            var packet = new BufferBuilder();
+            
+            packet.WriteByte((byte)MasterServerQueryPacketType.ServerListRequest);
+            packet.WriteByte((byte)region);
+
+            packet.WriteString(lastServerEndPoint.ToString());
+            ;
+            var filterStrings = new[] {""}.Concat(filters.Select(x => x.Key + "\\" + x.Value));
+            var filterList = string.Join("\\", filterStrings);
+            packet.WriteString(filterList);
+            
+            return packet.ToArray();
+        }
+
+        private static ushort ReadNetworkOrderShort(BufferReader reader)
+        {
+            return BitConverter.ToUInt16(reader.ReadBytes(2).Reverse().ToArray(), 0);
         }
 
     }

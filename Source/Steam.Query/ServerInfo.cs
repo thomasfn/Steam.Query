@@ -2,51 +2,49 @@
 {
     public class ServerInfo
     {
-        public int ID;
-        public byte VAC;
-        public int Protocol { get; set; }
-        public string Name { get; set; }
-        public string Map { get; set; }
-        public string Folder { get; set; }
-        public string Game { get; set; }
-        public byte Players { get; set; }
-        public byte MaxPlayers { get; set; }
-        public byte Bots { get; set; }
-        public char Type { get; set; }
-        public char Environment { get; set; }
-        public byte Visibility { get; set; }
-        public string Version { get; set; }
-        public int Port { get; set; }
+        public int Id { get; private set; }
+        public byte Vac { get; private set; }
+        public int Protocol { get; private set; }
+        public string Name { get; private set; }
+        public string Map { get; private set; }
+        public string Folder { get; private set; }
+        public string Game { get; private set; }
+        public byte Players { get; private set; }
+        public byte MaxPlayers { get; private set; }
+        public byte Bots { get; private set; }
+        public char Type { get; private set; }
+        public char Environment { get; private set; }
+        public byte Visibility { get; private set; }
+        public string Version { get; private set; }
+        public int Port { get; private set; }
 
-        public static ServerInfo Parse(byte[] data)
+        internal static ServerInfo Parse(BufferReader reader)
         {
-            var parser = new BufferReader(data);
-            parser.Skip(5);
 
             var result = new ServerInfo
             {
-                Protocol = parser.ReadByte(),
-                Name = parser.ReadString(),
-                Map = parser.ReadString(),
-                Folder = parser.ReadString(),
-                Game = parser.ReadString(),
-                ID = parser.ReadShort(),
-                Players = parser.ReadByte(),
-                MaxPlayers = parser.ReadByte(),
-                Bots = parser.ReadByte(),
-                Type = parser.ReadChar(),
-                Environment = parser.ReadChar(),
-                Visibility = parser.ReadByte(),
-                VAC = parser.ReadByte(),
-                Version = parser.ReadString()
+                Protocol = reader.ReadByte(),
+                Name = reader.ReadString(),
+                Map = reader.ReadString(),
+                Folder = reader.ReadString(),
+                Game = reader.ReadString(),
+                Id = reader.ReadShort(),
+                Players = reader.ReadByte(),
+                MaxPlayers = reader.ReadByte(),
+                Bots = reader.ReadByte(),
+                Type = reader.ReadChar(),
+                Environment = reader.ReadChar(),
+                Visibility = reader.ReadByte(),
+                Vac = reader.ReadByte(),
+                Version = reader.ReadString()
             };
 
             //get EDF
-            uint edf = parser.ReadByte();
+            var edf = reader.ReadByte();
 
             if ((edf & 0x80) != 0) //has port number
             {
-                result.Port = parser.ReadShort();
+                result.Port = reader.ReadShort();
             }
 
             return result;
