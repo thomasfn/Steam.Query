@@ -42,6 +42,7 @@
     <Compile Include="MasterServer.cs" />
     <Compile Include="MasterServerFilter.cs" />
     <Compile Include="MasterServerRegion.cs" />
+    <Compile Include="MultiPacketStringReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BufferReader.cs" />
     <Compile Include="Server.cs" />

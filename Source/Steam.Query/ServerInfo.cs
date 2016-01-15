@@ -23,7 +23,7 @@ namespace Steam.Query
         public static ServerInfo Parse(byte[] data)
         {
             var parser = new BufferReader(data);
-            parser.CurrentPosition += 5; //Header
+            parser.Skip(5);
 
             var result = new ServerInfo
             {

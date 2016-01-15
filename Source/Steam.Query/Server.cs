@@ -8,6 +8,8 @@ using System.Threading.Tasks;
 
 namespace Steam.Query
 {
+    using System.Runtime.CompilerServices;
+
     public class Server
     {
         
@@ -40,6 +42,15 @@ namespace Steam.Query
 
             await client.SendAsync(datagram, datagram.Length);
         }
+
+        private async Task<BufferReader> ReceiveBufferReaderAsync(UdpClient client, int headerSize)
+        {
+            var response = await client.ReceiveAsync();
+            var reader = new BufferReader(response.Buffer);
+            reader.Skip(headerSize);
+
+            return reader;
+        }
         
         public async Task<ServerRules> GetServerRulesAsync()
         {
@@ -48,28 +59,52 @@ namespace Steam.Query
                 var requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, BitConverter.GetBytes(-1));
                 await SendAsync(client, requestPacket);
 
-                var response = await client.ReceiveAsync();
-                var responseType = (ServerQueryPacketType) response.Buffer[4];
+                var reader = await ReceiveBufferReaderAsync(client, 4);
+                var responseType = (ServerQueryPacketType) reader.ReadByte();
 
                 if (responseType == ServerQueryPacketType.RulesResponse)
                     throw new NotImplementedException();
 
                 if (responseType != ServerQueryPacketType.RulesChallenge)
                     throw new ProtocolViolationException();
-                
-                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, response.Buffer.Skip(5).Take(4)); //reply with challenge number
+
+                var challengeNumber = reader.ReadSegment(4);
+                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest, challengeNumber); 
+
                 await SendAsync(client, requestPacket);
-                
-                response = await client.ReceiveAsync();
-                responseType = (ServerQueryPacketType)response.Buffer[16]; //seems not to agree with protocol, would expect this 11 bytes earlier...
+
+                reader = await ReceiveBufferReaderAsync(client, 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
+
+                responseType = (ServerQueryPacketType) reader.ReadByte();
 
                 if (responseType != ServerQueryPacketType.RulesResponse)
                     throw new ProtocolViolationException();
                 
-                return ServerRules.Parse(response.Buffer); //TODO: handle multi-packet responses, which should include... most of them
+                var ruleCount = reader.ReadShort();
+                var rules = new List<ServerRule>(ruleCount);
+                    
+                var packetsReceived = 1;
+                Func<Task<BufferReader>> sequelRequestAsyncFunc = async () =>
+                {
+                    var next = await ReceiveBufferReaderAsync(client, 12); //protocol unclear, header size determined manually
+                    packetsReceived++;
+                    return next;
+                };
+
+                var multiPacketStringReader = new MultiPacketStringReader(reader, sequelRequestAsyncFunc);
+
+                for (var i = 0; i < ruleCount; i++)
+                {
+                    var key = await multiPacketStringReader.ReadStringAsync();
+                    var value = await multiPacketStringReader.ReadStringAsync();
+
+                    rules.Add(new ServerRule(key, value));
+                }
+
+                return new ServerRules(rules);
             }
         }
-        
+
         public async Task<ServerInfo> GetServerInfoAsync()
         {
             using (var client = GetLocalEndpointUdpClient())

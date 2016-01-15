@@ -2,39 +2,22 @@
 
 namespace Steam.Query
 {
+    using System;
+
     public class ServerRules
     {
 
-        public IEnumerable<ServerRule> Rules => _rules;
+        public IEnumerable<ServerRule> Rules { get; }
 
-        private readonly List<ServerRule> _rules = new List<ServerRule>();
-        
-        private void Add(string key, string value)
+        internal ServerRules(IEnumerable<ServerRule> rules)
         {
-            _rules.Add(new ServerRule(key, value));
-        }
-        
-        public static ServerRules Parse(byte[] bytes)
-        {
-            var rules = new ServerRules();
-            var parser = new BufferReader(bytes);
-
-            parser.Skip(19); //header, which for some reason seems longer than spec...
-
-            while (parser.HasUnreadBytes)
-            {
-                var key = parser.ReadString();
-                var value = parser.ReadString();
-                rules.Add(key, value);
-            }
-
-            return rules;
+            Rules = rules;
         }
     }
 
     public class ServerRule
     {
-        public ServerRule(string key, string value)
+        internal ServerRule(string key, string value)
         {
             Key = key;
             Value = value;
@@ -42,5 +25,10 @@ namespace Steam.Query
 
         public string Key { get; }
         public string Value { get; }
+
+        public override string ToString()
+        {
+            return $"{Key} {Value}";
+        }
     }
 }
