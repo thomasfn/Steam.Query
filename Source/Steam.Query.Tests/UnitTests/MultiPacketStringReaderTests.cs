@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using NUnit.Framework;
 
-namespace Steam.Query.Tests
+namespace Steam.Query.Tests.UnitTests
 {
     [TestFixture]
     public class MultiPacketStringReaderTests

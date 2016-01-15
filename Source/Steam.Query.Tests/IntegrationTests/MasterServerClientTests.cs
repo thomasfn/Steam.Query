@@ -2,7 +2,7 @@
 using System.Linq;
 using NUnit.Framework;
 
-namespace Steam.Query.Tests
+namespace Steam.Query.Tests.IntegrationTests
 {
     [TestFixture]
     public class MasterServerClientTests

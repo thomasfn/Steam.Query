@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 
-namespace Steam.Query.Tests
+namespace Steam.Query.Tests.IntegrationTests
 {
     [TestFixture]
     public class ServerTests
@@ -29,7 +29,7 @@ namespace Steam.Query.Tests
             {
                 var t = _servers[i].GetServerRulesAsync();
 
-                if (t.Wait(TimeSpan.FromSeconds(5)))
+                //if (t.Wait(TimeSpan.FromSeconds(5)))
                 {
                     var rules = t.Result.Rules.ToList();
 

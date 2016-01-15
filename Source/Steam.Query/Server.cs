@@ -50,7 +50,7 @@ namespace Steam.Query
                 requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest); 
                 requestPacket.WriteLong(challengeNumber);
 
-                await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
+                reader = await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
 
                 responseType = (ServerQueryPacketType) reader.ReadByte();
 

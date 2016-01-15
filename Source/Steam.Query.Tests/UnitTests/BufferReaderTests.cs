@@ -1,6 +1,6 @@
 ﻿using NUnit.Framework;
 
-namespace Steam.Query.Tests
+namespace Steam.Query.Tests.UnitTests
 {
     [TestFixture]
     public class BufferReaderTests
