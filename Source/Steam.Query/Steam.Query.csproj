@@ -41,17 +41,17 @@
   <ItemGroup>
     <Compile Include="BufferBuilder.cs" />
     <Compile Include="Extensions.cs" />
-    <Compile Include="MasterServer.cs" />
-    <Compile Include="MasterServerFilter.cs" />
-    <Compile Include="MasterServerQueryPacketType.cs" />
-    <Compile Include="MasterServerRegion.cs" />
+    <Compile Include="MasterServers\MasterServer.cs" />
+    <Compile Include="MasterServers\MasterServerFilter.cs" />
+    <Compile Include="MasterServers\MasterServerQueryPacketType.cs" />
+    <Compile Include="MasterServers\MasterServerRegion.cs" />
     <Compile Include="MultiPacketStringReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BufferReader.cs" />
-    <Compile Include="Server.cs" />
-    <Compile Include="ServerInfo.cs" />
-    <Compile Include="ServerQueryPacketType.cs" />
-    <Compile Include="ServerRules.cs" />
+    <Compile Include="GameServers\GameServer.cs" />
+    <Compile Include="GameServers\GameServerInfo.cs" />
+    <Compile Include="GameServers\GameServerQueryPacketType.cs" />
+    <Compile Include="GameServers\GameServerRules.cs" />
     <Compile Include="SteamAgentBase.cs" />
   </ItemGroup>
   <ItemGroup>

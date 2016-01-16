@@ -1,4 +1,4 @@
-﻿namespace Steam.Query
+﻿namespace Steam.Query.MasterServers
 {
     public enum MasterServerRegion
     {

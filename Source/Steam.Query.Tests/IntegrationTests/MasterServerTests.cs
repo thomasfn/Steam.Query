@@ -1,11 +1,12 @@
 ﻿using System;
 using System.Linq;
 using NUnit.Framework;
+using Steam.Query.MasterServers;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
     [TestFixture]
-    public class MasterServerClientTests
+    public class MasterServerTests
     {
         [Test]
         public void BasicQuery()

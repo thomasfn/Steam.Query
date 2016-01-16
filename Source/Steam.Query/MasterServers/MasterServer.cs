@@ -1,13 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
+using Steam.Query.GameServers;
 
-namespace Steam.Query
+namespace Steam.Query.MasterServers
 {
     public sealed class MasterServer : SteamAgentBase
     {
@@ -35,7 +33,7 @@ namespace Steam.Query
             _endpoint = endpoint;
         }
 
-        public async Task<IEnumerable<Server>> GetServersAsync(MasterServerRegion region = MasterServerRegion.All, params MasterServerFilter[] masterServerFilters)
+        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRegion region = MasterServerRegion.All, params MasterServerFilter[] masterServerFilters)
         {
             var endPoints = new List<IPEndPoint>();
 
@@ -56,7 +54,7 @@ namespace Steam.Query
                 }
             }
 
-            return endPoints.Take(endPoints.Count - 1).Select(e => new Server(e));
+            return endPoints.Take(endPoints.Count - 1).Select(e => new GameServer(e));
         }
 
         private static IEnumerable<IPEndPoint> ReadEndPointsFromPacket(BufferReader reader)

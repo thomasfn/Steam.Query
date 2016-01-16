@@ -1,6 +1,6 @@
-﻿namespace Steam.Query
+﻿namespace Steam.Query.GameServers
 {
-    public class ServerInfo
+    public class GameServerInfo
     {
         public int Id { get; private set; }
         public byte Vac { get; private set; }
@@ -18,10 +18,10 @@
         public string Version { get; private set; }
         public int Port { get; private set; }
 
-        internal static ServerInfo Parse(BufferReader reader)
+        internal static GameServerInfo Parse(BufferReader reader)
         {
 
-            var result = new ServerInfo
+            var result = new GameServerInfo
             {
                 Protocol = reader.ReadByte(),
                 Name = reader.ReadString(),

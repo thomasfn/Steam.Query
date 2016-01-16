@@ -1,17 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
-using System.Net.Sockets;
-using System.Text;
 using System.Threading.Tasks;
 
-namespace Steam.Query
+namespace Steam.Query.GameServers
 {
-    public sealed class Server : SteamAgentBase
+    public sealed class GameServer : SteamAgentBase
     {
         
-        public Server(IPEndPoint endPoint)
+        public GameServer(IPEndPoint endPoint)
         {
             EndPoint = endPoint;
         }
@@ -20,7 +17,7 @@ namespace Steam.Query
 
         public static readonly byte[] ServerQueryHeader = {0xFF, 0xFF, 0xFF, 0xFF};
 
-        private static BufferBuilder GetRequestPacket(ServerQueryPacketType packetType)
+        private static BufferBuilder GetRequestPacket(GameServerQueryPacketType packetType)
         {
             var builder = new BufferBuilder();
             builder.WriteBytes(ServerQueryHeader);
@@ -29,36 +26,36 @@ namespace Steam.Query
             return builder;
         }
 
-        public async Task<ServerRules> GetServerRulesAsync()
+        public async Task<GameServerRules> GetServerRulesAsync()
         {
             using (var client = GetUdpClient(EndPoint))
             {
-                var requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest);
+                var requestPacket = GetRequestPacket(GameServerQueryPacketType.RulesRequest);
                 requestPacket.WriteLong(-1);
 
                 var reader = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
-                var responseType = (ServerQueryPacketType) reader.ReadByte();
+                var responseType = (GameServerQueryPacketType) reader.ReadByte();
 
-                if (responseType == ServerQueryPacketType.RulesResponse)
+                if (responseType == GameServerQueryPacketType.RulesResponse)
                     throw new NotImplementedException();
 
-                if (responseType != ServerQueryPacketType.RulesChallenge)
+                if (responseType != GameServerQueryPacketType.RulesChallenge)
                     throw new ProtocolViolationException();
 
                 var challengeNumber = reader.ReadLong();
-                requestPacket = GetRequestPacket(ServerQueryPacketType.RulesRequest); 
+                requestPacket = GetRequestPacket(GameServerQueryPacketType.RulesRequest); 
                 requestPacket.WriteLong(challengeNumber);
 
                 reader = await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
 
-                responseType = (ServerQueryPacketType) reader.ReadByte();
+                responseType = (GameServerQueryPacketType) reader.ReadByte();
 
-                if (responseType != ServerQueryPacketType.RulesResponse)
+                if (responseType != GameServerQueryPacketType.RulesResponse)
                     throw new ProtocolViolationException();
                 
                 var ruleCount = reader.ReadShort();
-                var rules = new List<ServerRule>(ruleCount);
+                var rules = new List<GameServerRule>(ruleCount);
                     
                 var packetsReceived = 1;
                 Func<Task<BufferReader>> sequelRequestAsyncFunc = async () =>
@@ -75,28 +72,28 @@ namespace Steam.Query
                     var key = await multiPacketStringReader.ReadStringAsync();
                     var value = await multiPacketStringReader.ReadStringAsync();
 
-                    rules.Add(new ServerRule(key, value));
+                    rules.Add(new GameServerRule(key, value));
                 }
 
-                return new ServerRules(rules);
+                return new GameServerRules(rules);
             }
         }
 
-        public async Task<ServerInfo> GetServerInfoAsync()
+        public async Task<GameServerInfo> GetServerInfoAsync()
         {
             using (var client = GetUdpClient(EndPoint))
             {
-                var requestPacket = GetRequestPacket(ServerQueryPacketType.InfoRequest);
+                var requestPacket = GetRequestPacket(GameServerQueryPacketType.InfoRequest);
                 requestPacket.WriteString("Source Engine Query");
 
                 var response = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
-                var responseType = (ServerQueryPacketType) response.ReadByte();
+                var responseType = (GameServerQueryPacketType) response.ReadByte();
 
-                if (responseType != ServerQueryPacketType.InfoResponse)
+                if (responseType != GameServerQueryPacketType.InfoResponse)
                     throw new ProtocolViolationException();
 
-                return ServerInfo.Parse(response);
+                return GameServerInfo.Parse(response);
             }
         }
         

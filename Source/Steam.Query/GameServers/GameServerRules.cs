@@ -1,21 +1,21 @@
 ﻿using System.Collections.Generic;
 
-namespace Steam.Query
+namespace Steam.Query.GameServers
 {
-    public class ServerRules
+    public class GameServerRules
     {
 
-        public IEnumerable<ServerRule> Rules { get; }
+        public IEnumerable<GameServerRule> Rules { get; }
 
-        internal ServerRules(IEnumerable<ServerRule> rules)
+        internal GameServerRules(IEnumerable<GameServerRule> rules)
         {
             Rules = rules;
         }
     }
 
-    public class ServerRule
+    public class GameServerRule
     {
-        internal ServerRule(string key, string value)
+        internal GameServerRule(string key, string value)
         {
             Key = key;
             Value = value;

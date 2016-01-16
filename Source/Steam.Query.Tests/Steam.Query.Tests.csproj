@@ -45,10 +45,10 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="UnitTests\BufferReaderTests.cs" />
-    <Compile Include="IntegrationTests\MasterServerClientTests.cs" />
+    <Compile Include="IntegrationTests\MasterServerTests.cs" />
     <Compile Include="UnitTests\MultiPacketStringReaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="IntegrationTests\ServerTests.cs" />
+    <Compile Include="IntegrationTests\GameServerTests.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />

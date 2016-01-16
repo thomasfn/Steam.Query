@@ -3,13 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
+using Steam.Query.GameServers;
+using Steam.Query.MasterServers;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
     [TestFixture]
-    public class ServerTests
+    public class GameServerTests
     {
-        private List<Server> _servers;
+        private List<GameServer> _servers;
 
         [TestFixtureSetUp]
         public void Setup()
@@ -29,7 +31,7 @@ namespace Steam.Query.Tests.IntegrationTests
             {
                 var t = _servers[i].GetServerRulesAsync();
 
-                //if (t.Wait(TimeSpan.FromSeconds(5)))
+                if (t.Wait(TimeSpan.FromSeconds(10)))
                 {
                     var rules = t.Result.Rules.ToList();
 
@@ -58,7 +60,7 @@ namespace Steam.Query.Tests.IntegrationTests
             {
                 var t = _servers[i].GetServerInfoAsync();
 
-                if (t.Wait(TimeSpan.FromSeconds(3)))
+                if (t.Wait(TimeSpan.FromSeconds(10)))
                 {
 
                     var server = t.Result;
