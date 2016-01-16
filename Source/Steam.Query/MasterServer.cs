@@ -12,7 +12,6 @@ namespace Steam.Query
     public sealed class MasterServer : SteamAgentBase
     {
         private readonly IPEndPoint _endpoint;
-        private static readonly IPEndPoint NullEndPoint = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 0);
 
         private const int IpEndPointLength = 6;
 
@@ -38,29 +37,32 @@ namespace Steam.Query
 
         public async Task<IEnumerable<Server>> GetServersAsync(MasterServerRegion region = MasterServerRegion.All, params MasterServerFilter[] masterServerFilters)
         {
-            var servers = new List<Server>();
+            var endPoints = new List<IPEndPoint>();
+
             using (var client = GetUdpClient(_endpoint))
             {
-                IPEndPoint lastServerEndPoint = null;
-
-                while (!NullEndPoint.Equals(lastServerEndPoint))
+                while (true)
                 {
-                    var request = GetRequest(lastServerEndPoint ?? NullEndPoint, region, masterServerFilters);
+                    var request = GetRequest(endPoints.LastOrDefault(), region, masterServerFilters);
                     var response = await RequestResponseAsync(client, request, IpEndPointLength);
 
-                    while (response.Remaining >= IpEndPointLength)
-                    {
-                        lastServerEndPoint = ReadEndPoint(response);
+                    var packetEndPoints = ReadEndPointsFromPacket(response);
+                    endPoints.AddRange(packetEndPoints);
 
-                        if (!lastServerEndPoint.Equals(NullEndPoint))
-                        {
-                            servers.Add(new Server(lastServerEndPoint));
-                        }
+                    if (endPoints.Last().IsEmpty())
+                    {
+                        break;
                     }
                 }
             }
 
-            return servers;
+            return endPoints.Take(endPoints.Count - 1).Select(e => new Server(e));
+        }
+
+        private static IEnumerable<IPEndPoint> ReadEndPointsFromPacket(BufferReader reader)
+        {
+            while (reader.Remaining >= IpEndPointLength)
+                yield return ReadEndPoint(reader);
         }
 
         private static IPEndPoint ReadEndPoint(BufferReader reader)
@@ -78,8 +80,8 @@ namespace Steam.Query
             packet.WriteByte((byte)MasterServerQueryPacketType.ServerListRequest);
             packet.WriteByte((byte)region);
 
-            packet.WriteString(lastServerEndPoint.ToString());
-            ;
+            packet.WriteString(lastServerEndPoint?.ToString() ?? "0.0.0.0:0");
+            
             var filterStrings = new[] {""}.Concat(filters.Select(x => x.Key + "\\" + x.Value));
             var filterList = string.Join("\\", filterStrings);
             packet.WriteString(filterList);

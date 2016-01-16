@@ -33,7 +33,7 @@ namespace Steam.Query.Tests.IntegrationTests
                 {
                     var rules = t.Result.Rules.ToList();
 
-                    Assert.That(rules.Count > 20);
+                    Assert.That(rules.Count > 100);
                     Assert.That(rules.All(x => IsValidRuleString(x.Key)));
                     return;
                 }
