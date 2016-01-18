@@ -33,7 +33,7 @@ namespace Steam.Query
             WriteByte((byte)c);
         }
   
-        public void WriteShort(short n)
+        public void WriteShort(ushort n)
         {
             WriteBytes(BitConverter.GetBytes(n));
         }
@@ -49,6 +49,43 @@ namespace Steam.Query
             WriteByte(0x00);
         }
 
+        public void WriteEnum<TEnum>(TEnum val) where TEnum : struct
+        {
+            WriteEnum<TEnum, byte>(val);
+        }
+
+        public void WriteEnum<TEnum, TDotNetType>(TEnum val) where TEnum : struct
+        {
+            var enumType = typeof (TEnum);
+            if (!enumType.IsEnum)
+                throw new ArgumentException("TEnum must be an enum.");
+
+            if (!IsSteamCompatibleNumericalType(typeof(TDotNetType)))
+                throw new InvalidOperationException("TDotNetType must correspond to a valid Steam numerical type.");
+
+            Action<BufferBuilder, object> writer;
+            if (!DotNetTypeWriteMethods.TryGetValue(typeof(TDotNetType), out writer))
+                throw new ArgumentException($"Unable to write {typeof(TDotNetType).Name}");
+
+            var enumCompatibleValue = Convert.ChangeType(val, typeof(TDotNetType));
+
+            writer(this, enumCompatibleValue);
+        }
+
         public byte[] ToArray() => _bytes.ToArray();
+
+        private static bool IsSteamCompatibleNumericalType(Type t)
+        {
+            return DotNetTypeWriteMethods.ContainsKey(t) && t != typeof(string);
+        }
+
+        private static readonly Dictionary<Type, Action<BufferBuilder, object>> DotNetTypeWriteMethods = new Dictionary<Type, Action<BufferBuilder, object>>
+        {
+            [typeof(byte)] = (builder, x) => builder.WriteByte((byte)x),
+            [typeof(ushort)] = (builder, x) => builder.WriteShort((ushort)x),
+            [typeof(int)] = (builder, x) => builder.WriteLong((int)x),
+            [typeof(char)] = (builder, x) => builder.WriteChar((char)x),
+            [typeof(string)] = (builder, x) => builder.WriteString((string)x),
+        };
     }
 }

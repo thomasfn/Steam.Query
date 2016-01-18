@@ -75,8 +75,8 @@ namespace Steam.Query.MasterServers
         {
             var packet = new BufferBuilder();
             
-            packet.WriteByte((byte)MasterServerQueryPacketType.ServerListRequest);
-            packet.WriteByte((byte)region);
+            packet.WriteEnum(MasterServerQueryPacketType.ServerListRequest);
+            packet.WriteEnum(region);
 
             packet.WriteString(lastServerEndPoint?.ToString() ?? "0.0.0.0:0");
             

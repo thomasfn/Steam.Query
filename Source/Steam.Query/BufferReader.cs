@@ -1,4 +1,5 @@
 ﻿using System;
+using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
@@ -101,6 +102,54 @@ namespace Steam.Query
         {
             File.WriteAllBytes(file, _bytes);
         }
+
+        internal TDotNetType Read<TDotNetType>()
+        {
+            Func<BufferReader, object> func;
+            if (!DotNetTypeReadMethods.TryGetValue(typeof(TDotNetType), out func))
+                throw new InvalidOperationException($"{typeof(TDotNetType).Name} is not a valid type for Read<TDotNetType>. Valid choices: { string.Join(", ", DotNetTypeReadMethods.Keys.Select(x => x.Name)) }.");
+
+            return (TDotNetType) func(this);
+        }
+
+        public TEnum ReadEnum<TEnum>() where TEnum : struct
+        {
+            return ReadEnum<TEnum, byte>();
+        }
+
+        public TEnum ReadEnum<TEnum, TDotNetType>() where TEnum : struct
+        {
+            var enumType = typeof (TEnum);
+            if (!enumType.IsEnum)
+                throw new ArgumentException("TEnum must be an enum.");
+
+            if (!IsSteamCompatibleNumericalType(typeof (TDotNetType)))
+                throw new InvalidOperationException("TDotNetType must correspond to a valid Steam numerical type.");
+
+            var val = (object)Read<TDotNetType>();
+            var enumCompatibleValue = Convert.ChangeType(val, Enum.GetUnderlyingType(enumType));
+
+            if (!Enum.IsDefined(enumType, enumCompatibleValue))
+                throw new InvalidCastException($"The enum type {enumType.Name} does not define the read value {val}.");
+
+            return (TEnum) enumCompatibleValue;
+        }
+
+        private static bool IsSteamCompatibleNumericalType(Type t)
+        {
+            return DotNetTypeReadMethods.ContainsKey(t) && t != typeof (string);
+        }
+        
+        private static readonly Dictionary<Type, Func<BufferReader, object>> DotNetTypeReadMethods = new Dictionary<Type, Func<BufferReader, object>>
+        {
+            [typeof(byte)] = reader => reader.ReadByte(),
+            [typeof(ushort)] = reader => reader.ReadShort(),
+            [typeof(int)] = reader => reader.ReadLong(),
+            [typeof(char)] = reader => reader.ReadChar(),
+            [typeof(string)] = reader => reader.ReadString()
+        };
+
+        
 
     }
 }

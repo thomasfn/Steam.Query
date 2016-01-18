@@ -21,7 +21,7 @@ namespace Steam.Query.GameServers
         {
             var builder = new BufferBuilder();
             builder.WriteBytes(ServerQueryHeader);
-            builder.WriteByte((byte)packetType);
+            builder.WriteEnum(packetType);
             
             return builder;
         }
@@ -35,7 +35,7 @@ namespace Steam.Query.GameServers
 
                 var reader = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
-                var responseType = (GameServerQueryPacketType) reader.ReadByte();
+                var responseType = reader.ReadEnum<GameServerQueryPacketType>();
 
                 if (responseType == GameServerQueryPacketType.RulesResponse)
                     throw new NotImplementedException();
@@ -49,7 +49,7 @@ namespace Steam.Query.GameServers
 
                 reader = await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
 
-                responseType = (GameServerQueryPacketType) reader.ReadByte();
+                responseType = reader.ReadEnum<GameServerQueryPacketType>();
 
                 if (responseType != GameServerQueryPacketType.RulesResponse)
                     throw new ProtocolViolationException();
@@ -88,7 +88,7 @@ namespace Steam.Query.GameServers
 
                 var response = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
-                var responseType = (GameServerQueryPacketType) response.ReadByte();
+                var responseType = response.ReadEnum<GameServerQueryPacketType>();
 
                 if (responseType != GameServerQueryPacketType.InfoResponse)
                     throw new ProtocolViolationException();
