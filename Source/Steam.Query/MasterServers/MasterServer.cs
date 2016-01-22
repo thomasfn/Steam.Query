@@ -7,6 +7,8 @@ using Steam.Query.GameServers;
 
 namespace Steam.Query.MasterServers
 {
+    using Filtering;
+
     public sealed class MasterServer : SteamAgentBase
     {
         private readonly IPEndPoint _endpoint;
@@ -33,16 +35,24 @@ namespace Steam.Query.MasterServers
             _endpoint = endpoint;
         }
 
-        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRegion region = MasterServerRegion.All, params MasterServerFilter[] masterServerFilters)
+        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRegion region, params IFilter[] filters)
+        {
+            return await GetServersAsync(new MasterServerRequest(region, filters));
+        }
+
+        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRequest masterServerRequest)
         {
             var endPoints = new List<IPEndPoint>();
 
+            var packet = 0;
             using (var client = GetUdpClient(_endpoint))
             {
-                while (true)
+                while (!masterServerRequest.MaximumPackets.HasValue || packet < masterServerRequest.MaximumPackets.Value)
                 {
-                    var request = GetRequest(endPoints.LastOrDefault(), region, masterServerFilters);
+                    var request = GetRequest(endPoints.LastOrDefault(), masterServerRequest.Region, masterServerRequest.Filters);
                     var response = await RequestResponseAsync(client, request, IpEndPointLength);
+
+                    packet++;
 
                     var packetEndPoints = ReadEndPointsFromPacket(response);
                     endPoints.AddRange(packetEndPoints);
@@ -71,7 +81,7 @@ namespace Steam.Query.MasterServers
             return new IPEndPoint(new IPAddress(ipBytes.ToArray()), port);
         }
 
-        private static byte[] GetRequest(IPEndPoint lastServerEndPoint, MasterServerRegion region, IEnumerable<MasterServerFilter> filters)
+        private static byte[] GetRequest(IPEndPoint lastServerEndPoint, MasterServerRegion region, IEnumerable<IFilter> filters)
         {
             var packet = new BufferBuilder();
             
@@ -80,9 +90,7 @@ namespace Steam.Query.MasterServers
 
             packet.WriteString(lastServerEndPoint?.ToString() ?? "0.0.0.0:0");
             
-            var filterStrings = new[] {""}.Concat(filters.Select(x => x.Key + "\\" + x.Value));
-            var filterList = string.Join("\\", filterStrings);
-            packet.WriteString(filterList);
+            packet.WriteString(filters.GetFilterCollectionString());
             
             return packet.ToArray();
         }

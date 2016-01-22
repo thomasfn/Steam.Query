@@ -41,10 +41,16 @@
   <ItemGroup>
     <Compile Include="BufferBuilder.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="MasterServers\Filtering\ConstantFilter.cs" />
+    <Compile Include="MasterServers\Filtering\IFilter.cs" />
+    <Compile Include="MasterServers\Filtering\NandFilter.cs" />
+    <Compile Include="MasterServers\Filtering\NorFilter.cs" />
+    <Compile Include="MasterServers\Filtering\NotFilter.cs" />
     <Compile Include="MasterServers\MasterServer.cs" />
-    <Compile Include="MasterServers\MasterServerFilter.cs" />
+    <Compile Include="MasterServers\Filtering\Filter.cs" />
     <Compile Include="MasterServers\MasterServerQueryPacketType.cs" />
     <Compile Include="MasterServers\MasterServerRegion.cs" />
+    <Compile Include="MasterServers\MasterServerRequest.cs" />
     <Compile Include="MultiPacketStringReader.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="BufferReader.cs" />
@@ -57,6 +63,7 @@
   <ItemGroup>
     <None Include="Steam.Query.nuspec" />
   </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

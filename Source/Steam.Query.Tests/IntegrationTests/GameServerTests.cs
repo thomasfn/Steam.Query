@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Text.RegularExpressions;
 using NUnit.Framework;
 using Steam.Query.GameServers;
@@ -8,6 +9,8 @@ using Steam.Query.MasterServers;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
+    using MasterServers.Filtering;
+
     [TestFixture]
     public class GameServerTests
     {
@@ -17,8 +20,7 @@ namespace Steam.Query.Tests.IntegrationTests
         public void Setup()
         {
             var client = new MasterServer();
-            _servers = client.GetServersAsync(MasterServerRegion.Europe, MasterServerFilter.Gamedir("tf"), MasterServerFilter.NameMatch("Valve*")).Result.ToList();
-            ;
+            _servers = client.GetServersAsync(MasterServerRegion.Europe, Filter.GamedirIs("tf"), Filter.NameMatches("Valve*")).Result.ToList();
         }
 
         [Test]
@@ -42,6 +44,14 @@ namespace Steam.Query.Tests.IntegrationTests
             }
 
             Assert.Fail("Tried 10 servers and nothing came back....");
+        }
+
+        [Test]
+        public void TimesOutWhenNotReceivingAnswer()
+        {
+            var server = new GameServer(new IPEndPoint(IPAddress.Parse("1.1.1.1"), 65534));
+
+            Assert.Throws<TimeoutException>(async () => await server.GetServerInfoAsync());
         }
 
         private static readonly Regex RuleStringRegex = new Regex(@"^[A-Za-z0-9;,\.\-_]+$");
@@ -73,6 +83,7 @@ namespace Steam.Query.Tests.IntegrationTests
                     return;
                 }
             }
+
             Assert.Fail("Tried 10 servers and nothing came back....");
         }
 

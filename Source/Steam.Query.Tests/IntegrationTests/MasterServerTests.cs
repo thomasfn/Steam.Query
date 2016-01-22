@@ -1,30 +1,95 @@
 ﻿using System;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Steam.Query.MasterServers;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
+    using MasterServers.Filtering;
+
     [TestFixture]
     public class MasterServerTests
     {
         [Test]
-        public void BasicQuery()
+        public async Task BasicQuery()
         {
             var client = new MasterServer();
-            var t = client.GetServersAsync(MasterServerRegion.Europe, MasterServerFilter.Gamedir("tf"));
-            t.Wait(TimeSpan.FromSeconds(10));
 
-            Assert.IsTrue(t.Result.Any(), "No servers were returned");
+            var request = new MasterServerRequest(
+                MasterServerRegion.Europe,
+                Filter.GamedirIs("tf")
+                )
+            {
+                MaximumPackets = 2,
+                RequestTimeout = TimeSpan.FromSeconds(10)
+            };
+
+            var t = await client.GetServersAsync(request);
+            var servers = t.ToList();
+
+            Assert.IsTrue(servers.Any(), "No servers were returned");
         }
 
         [Test]
-        public void MultiFilterQuery()
+        public async Task MultiFilterQuery()
         {
             var client = new MasterServer();
-            var t = client.GetServersAsync(MasterServerRegion.Europe, MasterServerFilter.Gamedir("tf"), MasterServerFilter.NotApp("500"));
-            t.Wait(TimeSpan.FromSeconds(10));
-            Assert.IsTrue(t.Result.Any(), "No servers were returned");
+
+            var request = new MasterServerRequest(
+                MasterServerRegion.Europe,
+                Filter.GamedirIs("tf"),
+                Filter.AppIdIsNot("500")
+                )
+            {
+                MaximumPackets = 2,
+                RequestTimeout = TimeSpan.FromSeconds(10)
+            };
+
+            var t = await client.GetServersAsync(request);
+            var servers = t.ToList();
+
+            Assert.IsTrue(servers.Any(), "No servers were returned");
         }
+
+        [Test]
+        public async Task LogicalQuery()
+        {
+            var client = new MasterServer();
+
+            var request = new MasterServerRequest(
+                MasterServerRegion.Europe,
+                Filter.GamedirIs("tf"),
+                Filter.IsNotEmpty,
+                Filter.IsNotFull,
+                Filter.Nor(
+                    Filter.NameMatches("*Valve*"),
+                    Filter.NameMatches("*trade*")
+                    )
+                )
+            {
+                MaximumPackets = 1
+            };
+
+            var servers = (await client.GetServersAsync(request)).Take(100).ToList();
+            Assert.IsTrue(servers.Any(), "No servers were returned");
+
+            var infos = await Task.WhenAll(servers.Select(async x => new {Server = x, Info = await x.TryGetServerInfoAsync()}));
+
+
+
+            foreach (var i in infos.Where(x => x.Info != null))
+            {
+                Assert.AreEqual("tf", i.Info.Folder, $"Unexpected gamedir {i.Server.EndPoint}; {i.Info.Folder}");
+
+                Assert.That(i.Info.Players, Is.AtLeast(1), $"Unexpected empty server {i.Server.EndPoint}");
+                Assert.That(i.Info.Players, Is.LessThan(i.Info.MaxPlayers), $"Unexpected full server {i.Server.EndPoint}");
+
+                Assert.That(!i.Info.Name.Contains("Valve") && !i.Info.Name.Contains("trade"), $"Expected server name to contain neither 'Valve' or 'trade' - was [{i.Info.Name}].");
+
+            }
+        }
+
     }
 }

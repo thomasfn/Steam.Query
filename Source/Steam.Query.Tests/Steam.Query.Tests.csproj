@@ -48,6 +48,7 @@
     <Compile Include="UnitTests\BufferBuilderTests.cs" />
     <Compile Include="UnitTests\BufferReaderTests.cs" />
     <Compile Include="IntegrationTests\MasterServerTests.cs" />
+    <Compile Include="UnitTests\FilterTests.cs" />
     <Compile Include="UnitTests\MultiPacketStringReaderTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="IntegrationTests\GameServerTests.cs" />

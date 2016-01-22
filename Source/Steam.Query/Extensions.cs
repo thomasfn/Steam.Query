@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using Steam.Query.MasterServers.Filtering;
 
 namespace Steam.Query
 {
@@ -14,6 +15,22 @@ namespace Steam.Query
         public static bool IsEmpty(this IPEndPoint ipEndPoint)
         {
             return ipEndPoint.Equals(NullEndPoint);
+        }
+
+        public static string GetFilterCollectionString(this IEnumerable<IFilter> filters)
+        {
+            var filterStrings = new[] { "" }.Concat(filters.Select(x => x.GetFilterString()));
+            return string.Join("\\", filterStrings);
+        }
+
+        public static async Task<T> TimeoutAfter<T>(this Task<T> task, TimeSpan t)
+        {
+            await Task.WhenAny(task, Task.Delay(t));
+
+            if (!task.IsCompleted)
+                throw new TimeoutException();
+
+            return await task;
         }
 
     }
