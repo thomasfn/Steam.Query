@@ -45,6 +45,7 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="TestEnum.cs" />
+    <Compile Include="TestExtensions.cs" />
     <Compile Include="UnitTests\BufferBuilderTests.cs" />
     <Compile Include="UnitTests\BufferReaderTests.cs" />
     <Compile Include="IntegrationTests\MasterServerTests.cs" />

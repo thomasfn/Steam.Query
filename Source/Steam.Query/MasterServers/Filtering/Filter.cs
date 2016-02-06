@@ -1,7 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-
-namespace Steam.Query.MasterServers.Filtering
+﻿namespace Steam.Query.MasterServers.Filtering
 {
     public static class Filter
     {
@@ -40,12 +37,17 @@ namespace Steam.Query.MasterServers.Filtering
         /// <param name="filter">The name to match - * is used as wildcard</param>
         /// </summary>
         public static ConstantFilter NameMatches(string filter) => new ConstantFilter("name_match", filter);
-        
+
+        /// <summary>
+        /// Servers that are running game [appid]
+        /// </summary>
+        public static ConstantFilter AppIdIs(string appId) => new ConstantFilter("appid", appId);
+
         /// <summary>
         /// Servers that are NOT running game [appid] (This was introduced to block Left 4 Dead games from the Steam Server Browser)
         /// </summary>
         public static ConstantFilter AppIdIsNot(string appId) => new ConstantFilter("napp", appId);
-        
+
         /// <summary>
         /// Servers running the specified map (ex. cs_italy)
         /// Does NOT support wildcards

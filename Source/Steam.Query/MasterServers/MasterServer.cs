@@ -4,12 +4,11 @@ using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Steam.Query.GameServers;
+using Steam.Query.MasterServers.Filtering;
 
 namespace Steam.Query.MasterServers
 {
-    using Filtering;
-
-    public sealed class MasterServer : SteamAgentBase
+    public sealed class MasterServer : IMasterServer
     {
         private readonly IPEndPoint _endpoint;
 
@@ -35,22 +34,22 @@ namespace Steam.Query.MasterServers
             _endpoint = endpoint;
         }
 
-        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRegion region, params IFilter[] filters)
+        public async Task<IEnumerable<IGameServer>> GetServersAsync(MasterServerRegion region, params IFilter[] filters)
         {
             return await GetServersAsync(new MasterServerRequest(region, filters));
         }
 
-        public async Task<IEnumerable<GameServer>> GetServersAsync(MasterServerRequest masterServerRequest)
+        public async Task<IEnumerable<IGameServer>> GetServersAsync(MasterServerRequest masterServerRequest)
         {
             var endPoints = new List<IPEndPoint>();
 
             var packet = 0;
-            using (var client = GetUdpClient(_endpoint))
+            using (var client = SteamAgent.GetUdpClient(_endpoint))
             {
                 while (!masterServerRequest.MaximumPackets.HasValue || packet < masterServerRequest.MaximumPackets.Value)
                 {
                     var request = GetRequest(endPoints.LastOrDefault(), masterServerRequest.Region, masterServerRequest.Filters);
-                    var response = await RequestResponseAsync(client, request, IpEndPointLength);
+                    var response = await SteamAgent.RequestResponseAsync(client, request, IpEndPointLength);
 
                     packet++;
 

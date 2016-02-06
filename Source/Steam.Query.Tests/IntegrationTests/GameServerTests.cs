@@ -3,47 +3,54 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text.RegularExpressions;
+using System.Threading.Tasks;
 using NUnit.Framework;
 using Steam.Query.GameServers;
 using Steam.Query.MasterServers;
+using Steam.Query.MasterServers.Filtering;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
-    using MasterServers.Filtering;
-
     [TestFixture]
     public class GameServerTests
     {
-        private List<GameServer> _servers;
+        private List<IGameServer> _servers;
+
+        private const int GetRulesAttempts = 4;
+        private const int GetInfoAttempts = 4;
 
         [TestFixtureSetUp]
-        public void Setup()
+        public void Setup() //Should be async, but isn't currently supported by NUnit
         {
             var client = new MasterServer();
-            _servers = client.GetServersAsync(MasterServerRegion.Europe, Filter.GamedirIs("tf"), Filter.NameMatches("Valve*")).Result.ToList();
+            _servers = client.GetServersAsync(MasterServerRegion.Europe, Filter.GamedirIs("tf"), Filter.NameMatches("Valve*")).Result.ToList().Shuffle();
         }
 
         [Test]
-        public void GetServerRulesAsync()
+        public async Task GetServerRulesAsync()
         {
             if (!_servers.Any())
                 Assert.Inconclusive();
 
-            for (var i = 0; i < 1; i++)
+            for (var i = 0; i < GetRulesAttempts; i++)
             {
-                var t = _servers[i].GetServerRulesAsync();
-
-                if (t.Wait(TimeSpan.FromSeconds(10)))
+                try
                 {
-                    var rules = t.Result.Rules.ToList();
+                    var serverRules = await _servers[i].GetServerRulesAsync().TimeoutAfter(TimeSpan.FromSeconds(3));
+                    var rules = serverRules.Rules.ToList();
 
-                    Assert.That(rules.Count > 100);
+                    Assert.That(rules.Count, Is.AtLeast(100));
                     Assert.That(rules.All(x => IsValidRuleString(x.Key)));
+                    
                     return;
+                }
+                catch (TimeoutException)
+                {
+                    
                 }
             }
 
-            Assert.Fail("Tried 10 servers and nothing came back....");
+            Assert.Fail($"Query timed out on all {GetRulesAttempts} attempt(s)");
         }
 
         [Test]
@@ -61,30 +68,30 @@ namespace Steam.Query.Tests.IntegrationTests
         }
 
         [Test]
-        public void GetServerInfoAsync()
+        public async Task GetServerInfoAsync()
         {
             if (!_servers.Any())
                 Assert.Inconclusive();
 
-            for (var i = 0; i < 10; i++)
+            for (var i = 0; i < GetInfoAttempts; i++)
             {
-                var t = _servers[i].GetServerInfoAsync();
-
-                if (t.Wait(TimeSpan.FromSeconds(10)))
+                try
                 {
+                    var server = await _servers[i].GetServerInfoAsync().TimeoutAfter(TimeSpan.FromSeconds(333333));
 
-                    var server = t.Result;
-
-                    Assert.That(server.Folder, Is.EqualTo("tf"));
-                    Assert.That(new[] {'w', 'l', 'm', 'o'}.Contains(server.Environment));
-                    Assert.That(new[] {'d', 'l', 'p'}.Contains(server.Type));
+                    Assert.That(server.Gamedir, Is.EqualTo("tf"));
+                    Assert.That(server.Type, Is.EqualTo(GameServerType.Dedicated));
                     Assert.That(server.Name, Is.StringStarting("Valve"));
 
                     return;
                 }
+                catch (TimeoutException)
+                {
+
+                }
             }
 
-            Assert.Fail("Tried 10 servers and nothing came back....");
+            Assert.Fail($"Query timed out on all {GetInfoAttempts} attempt(s)");
         }
 
     }

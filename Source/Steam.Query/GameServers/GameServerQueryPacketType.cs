@@ -1,6 +1,6 @@
 ﻿namespace Steam.Query.GameServers
 {
-    public enum GameServerQueryPacketType
+    internal enum GameServerQueryPacketType
     {
         InfoRequest = 0x54,
         InfoResponse = 0x49,

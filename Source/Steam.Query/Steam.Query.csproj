@@ -41,11 +41,17 @@
   <ItemGroup>
     <Compile Include="BufferBuilder.cs" />
     <Compile Include="Extensions.cs" />
+    <Compile Include="GameServers\GameServerEnvironment.cs" />
+    <Compile Include="GameServers\GameServerType.cs" />
+    <Compile Include="IGameServer.cs" />
+    <Compile Include="IGameServerInfo.cs" />
+    <Compile Include="IGameServerRules.cs" />
     <Compile Include="MasterServers\Filtering\ConstantFilter.cs" />
     <Compile Include="MasterServers\Filtering\IFilter.cs" />
     <Compile Include="MasterServers\Filtering\NandFilter.cs" />
     <Compile Include="MasterServers\Filtering\NorFilter.cs" />
     <Compile Include="MasterServers\Filtering\NotFilter.cs" />
+    <Compile Include="IMasterServer.cs" />
     <Compile Include="MasterServers\MasterServer.cs" />
     <Compile Include="MasterServers\Filtering\Filter.cs" />
     <Compile Include="MasterServers\MasterServerQueryPacketType.cs" />
@@ -58,7 +64,7 @@
     <Compile Include="GameServers\GameServerInfo.cs" />
     <Compile Include="GameServers\GameServerQueryPacketType.cs" />
     <Compile Include="GameServers\GameServerRules.cs" />
-    <Compile Include="SteamAgentBase.cs" />
+    <Compile Include="SteamAgent.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Steam.Query.nuspec" />

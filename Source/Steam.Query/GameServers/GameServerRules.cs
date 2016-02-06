@@ -2,10 +2,10 @@
 
 namespace Steam.Query.GameServers
 {
-    public class GameServerRules
+    internal class GameServerRules : IGameServerRules
     {
 
-        public IEnumerable<GameServerRule> Rules { get; }
+        public IEnumerable<IGameServerRule> Rules { get; }
 
         internal GameServerRules(IEnumerable<GameServerRule> rules)
         {
@@ -13,7 +13,7 @@ namespace Steam.Query.GameServers
         }
     }
 
-    public class GameServerRule
+    internal class GameServerRule : IGameServerRule
     {
         internal GameServerRule(string key, string value)
         {

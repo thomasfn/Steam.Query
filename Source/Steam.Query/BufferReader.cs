@@ -1,13 +1,13 @@
 ﻿using System;
-using System.CodeDom;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Net;
 using System.Text;
 
 namespace Steam.Query
 {
-    public class BufferReader
+    internal class BufferReader
     {
         private readonly byte[] _bytes;
 
@@ -133,6 +133,20 @@ namespace Steam.Query
                 throw new InvalidCastException($"The enum type {enumType.Name} does not define the read value {val}.");
 
             return (TEnum) enumCompatibleValue;
+        }
+
+        public bool ReadBool()
+        {
+            var b = ReadByte();
+            switch (b)
+            {
+                case 1:
+                    return true;
+                case 0:
+                    return false;
+                default:
+                    throw new ProtocolViolationException($"Attempted to read boolean value, but {b} is not a legal value. (Should be 0 or 1)");
+            }
         }
 
         private static bool IsSteamCompatibleNumericalType(Type t)

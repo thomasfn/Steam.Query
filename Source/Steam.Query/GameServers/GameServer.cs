@@ -5,7 +5,7 @@ using System.Threading.Tasks;
 
 namespace Steam.Query.GameServers
 {
-    public sealed class GameServer : SteamAgentBase
+    internal class GameServer : IGameServer
     {
         
         public GameServer(IPEndPoint endPoint)
@@ -31,7 +31,7 @@ namespace Steam.Query.GameServers
             return builder;
         }
 
-        public async Task<GameServerRules> GetServerRulesAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        public async Task<IGameServerRules> GetServerRulesAsync(bool forceRefresh = false, TimeSpan? timeout = null)
         {
             if (forceRefresh || _rules == null)
                 return await QueryServerRulesAsync(timeout ?? DefaultTimeout);
@@ -39,7 +39,7 @@ namespace Steam.Query.GameServers
             return _rules;
         }
 
-        public async Task<GameServerRules> TryGetServerRulesAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        public async Task<IGameServerRules> TryGetServerRulesAsync(bool forceRefresh = false, TimeSpan? timeout = null)
         {
             try
             {
@@ -51,7 +51,7 @@ namespace Steam.Query.GameServers
             }
         }
 
-        public async Task<GameServerInfo> GetServerInfoAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        public async Task<IGameServerInfo> GetServerInfoAsync(bool forceRefresh = false, TimeSpan? timeout = null)
         {
             if (forceRefresh || _info == null)
                 return await QueryServerInfoAsync(timeout ?? DefaultTimeout);
@@ -59,7 +59,7 @@ namespace Steam.Query.GameServers
             return _info;
         }
 
-        public async Task<GameServerInfo> TryGetServerInfoAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        public async Task<IGameServerInfo> TryGetServerInfoAsync(bool forceRefresh = false, TimeSpan? timeout = null)
         {
             try
             {
@@ -71,16 +71,16 @@ namespace Steam.Query.GameServers
             }
         }
 
-        private async Task<GameServerRules> QueryServerRulesAsync(TimeSpan timeout)
+        private async Task<IGameServerRules> QueryServerRulesAsync(TimeSpan timeout)
         {
             var task = Task.Run(async () =>
             {
-                using (var client = GetUdpClient(EndPoint))
+                using (var client = SteamAgent.GetUdpClient(EndPoint))
                 {
                     var requestPacket = GetRequestPacket(GameServerQueryPacketType.RulesRequest);
                     requestPacket.WriteLong(-1);
 
-                    var reader = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
+                    var reader = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
                     var responseType = reader.ReadEnum<GameServerQueryPacketType>();
 
@@ -94,7 +94,7 @@ namespace Steam.Query.GameServers
                     requestPacket = GetRequestPacket(GameServerQueryPacketType.RulesRequest);
                     requestPacket.WriteLong(challengeNumber);
 
-                    reader = await RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
+                    reader = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 16); //seems not to agree with protocol, would expect this 11 bytes earlier...
 
                     responseType = reader.ReadEnum<GameServerQueryPacketType>();
 
@@ -107,7 +107,7 @@ namespace Steam.Query.GameServers
                     var packetsReceived = 1;
                     Func<Task<BufferReader>> sequelRequestAsyncFunc = async () =>
                     {
-                        var next = await ReceiveBufferReaderAsync(client, 12); //protocol unclear, header size determined manually
+                        var next = await SteamAgent.ReceiveBufferReaderAsync(client, 12); //protocol unclear, header size determined manually
                         packetsReceived++;
                         return next;
                     };
@@ -122,7 +122,8 @@ namespace Steam.Query.GameServers
                         rules.Add(new GameServerRule(key, value));
                     }
 
-                    return new GameServerRules(rules);
+                    _rules = new GameServerRules(rules);
+                    return _rules;
                 }
             });
 
@@ -133,19 +134,20 @@ namespace Steam.Query.GameServers
         {
             var task = Task.Run(async () =>
             {
-                using (var client = GetUdpClient(EndPoint))
+                using (var client = SteamAgent.GetUdpClient(EndPoint))
                 {
                     var requestPacket = GetRequestPacket(GameServerQueryPacketType.InfoRequest);
                     requestPacket.WriteString("Source Engine Query");
 
-                    var response = await RequestResponseAsync(client, requestPacket.ToArray(), 4);
+                    var response = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4);
 
                     var responseType = response.ReadEnum<GameServerQueryPacketType>();
 
                     if (responseType != GameServerQueryPacketType.InfoResponse)
                         throw new ProtocolViolationException();
 
-                    return GameServerInfo.Parse(response);
+                    _info = GameServerInfo.Parse(this, response);
+                    return _info;
                 }
             });
 

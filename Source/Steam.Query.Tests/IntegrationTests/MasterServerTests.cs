@@ -1,14 +1,12 @@
 ﻿using System;
 using System.Linq;
-using System.Security.Cryptography.X509Certificates;
 using System.Threading.Tasks;
 using NUnit.Framework;
 using Steam.Query.MasterServers;
+using Steam.Query.MasterServers.Filtering;
 
 namespace Steam.Query.Tests.IntegrationTests
 {
-    using MasterServers.Filtering;
-
     [TestFixture]
     public class MasterServerTests
     {
@@ -81,7 +79,7 @@ namespace Steam.Query.Tests.IntegrationTests
 
             foreach (var i in infos.Where(x => x.Info != null))
             {
-                Assert.AreEqual("tf", i.Info.Folder, $"Unexpected gamedir {i.Server.EndPoint}; {i.Info.Folder}");
+                Assert.AreEqual("tf", i.Info.Gamedir, $"Unexpected gamedir {i.Server.EndPoint}; {i.Info.Gamedir}");
 
                 Assert.That(i.Info.Players, Is.AtLeast(1), $"Unexpected empty server {i.Server.EndPoint}");
                 Assert.That(i.Info.Players, Is.LessThan(i.Info.MaxPlayers), $"Unexpected full server {i.Server.EndPoint}");

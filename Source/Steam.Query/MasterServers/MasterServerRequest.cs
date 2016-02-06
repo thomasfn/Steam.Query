@@ -1,9 +1,8 @@
 ﻿using System;
+using Steam.Query.MasterServers.Filtering;
 
 namespace Steam.Query.MasterServers
 {
-    using Filtering;
-
     public class MasterServerRequest
     {
         public MasterServerRegion Region { get; set; } = MasterServerRegion.All;
