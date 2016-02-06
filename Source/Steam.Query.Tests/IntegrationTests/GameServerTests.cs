@@ -77,11 +77,12 @@ namespace Steam.Query.Tests.IntegrationTests
             {
                 try
                 {
-                    var server = await _servers[i].GetServerInfoAsync().TimeoutAfter(TimeSpan.FromSeconds(333333));
+                    var serverInfo = await _servers[i].GetServerInfoAsync().TimeoutAfter(TimeSpan.FromSeconds(3));
 
-                    Assert.That(server.Gamedir, Is.EqualTo("tf"));
-                    Assert.That(server.Type, Is.EqualTo(GameServerType.Dedicated));
-                    Assert.That(server.Name, Is.StringStarting("Valve"));
+                    Assert.That(serverInfo.Gamedir, Is.EqualTo("tf"));
+                    Assert.That(serverInfo.Type, Is.EqualTo(GameServerType.Dedicated));
+                    Assert.That(serverInfo.Name, Is.StringStarting("Valve"));
+                    Assert.That(serverInfo.Ping, Is.InRange(1, 800));
 
                     return;
                 }

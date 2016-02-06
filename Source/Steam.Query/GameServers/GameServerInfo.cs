@@ -19,11 +19,10 @@ namespace Steam.Query.GameServers
         public GameServerEnvironment Environment { get; private set; }
         public bool HasPassword { get; private set; }
         public string Version { get; private set; }
-        public ushort Port { get; private set; }
+        public ushort Ping { get; set; }
 
-        internal static GameServerInfo Parse(IGameServer server, BufferReader reader)
+        internal static GameServerInfo Parse(IGameServer server, ushort ping, BufferReader reader)
         {
-            
             var result = new GameServerInfo
             {
                 Server = server,
@@ -40,16 +39,9 @@ namespace Steam.Query.GameServers
                 Environment = ReadEnvironment(reader),
                 HasPassword = reader.ReadBool(),
                 Vac = reader.ReadBool(),
-                Version = reader.ReadString()
+                Version = reader.ReadString(),
+                Ping = ping
             };
-
-            //get EDF
-            var edf = reader.ReadByte();
-
-            if ((edf & 0x80) != 0) //has port number
-            {
-                result.Port = reader.ReadShort();
-            }
 
             return result;
         }

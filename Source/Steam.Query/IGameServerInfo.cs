@@ -20,7 +20,6 @@ namespace Steam.Query
         GameServerEnvironment Environment { get; }
         bool HasPassword { get; }
         string Version { get; }
-        ushort Port { get; }
-
+        ushort Ping { get; set; }
     }
 }

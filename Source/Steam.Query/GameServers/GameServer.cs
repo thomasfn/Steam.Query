@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Net;
+using System.Net.NetworkInformation;
 using System.Threading.Tasks;
 
 namespace Steam.Query.GameServers
@@ -14,6 +16,8 @@ namespace Steam.Query.GameServers
         }
 
         public IPEndPoint EndPoint { get; }
+        public ushort? Ping { get; private set; }
+        public bool? IsReachable { get; private set; }
 
         private GameServerRules _rules;
         private GameServerInfo _info;
@@ -139,21 +143,38 @@ namespace Steam.Query.GameServers
                     var requestPacket = GetRequestPacket(GameServerQueryPacketType.InfoRequest);
                     requestPacket.WriteString("Source Engine Query");
 
-                    var response = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4);
+                    var pingTask = SendPing();
+                    var responseTask = SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4);
+
+                    await Task.WhenAll(pingTask, responseTask);
+
+                    var response = await responseTask;
+                    var ping = await pingTask;
 
                     var responseType = response.ReadEnum<GameServerQueryPacketType>();
 
                     if (responseType != GameServerQueryPacketType.InfoResponse)
                         throw new ProtocolViolationException();
 
-                    _info = GameServerInfo.Parse(this, response);
+                    _info = GameServerInfo.Parse(this, ping, response);
                     return _info;
                 }
             });
 
             return await task.TimeoutAfter(timeout);
         }
-        
+
+        public async Task<ushort> SendPing()
+        {
+            var ping = new Ping();
+            var reply = await ping.SendPingAsync(EndPoint.Address);
+
+            if (reply.Status != IPStatus.Success)
+                throw new TimeoutException();
+
+            return (ushort)reply.RoundtripTime;
+        }
+
         public override string ToString()
         {
             return EndPoint.ToString();
