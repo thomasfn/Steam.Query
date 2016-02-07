@@ -51,7 +51,7 @@ namespace Steam.Query.Tests.IntegrationTests
             Assert.IsTrue(servers.Any(), "No servers were returned");
         }
 
-        [Test]
+        [Test, Ignore("Unreliable results from the master server filtering")]
         public async Task LogicalQuery()
         {
             var client = new MasterServer();
