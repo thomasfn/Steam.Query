@@ -25,6 +25,20 @@ namespace Steam.Query.Tests.UnitTests
         }
 
         [Test]
+        public void ReadsUtf8Chars()
+        {
+            var reader = new BufferReader(new byte[] { 65, 231, 140, 171, 66 });
+
+            Assert.AreEqual('A', reader.ReadChar());
+            Assert.AreEqual(1, reader.CurrentPosition);
+
+            Assert.AreEqual('猫', reader.ReadChar());
+            Assert.AreEqual(4, reader.CurrentPosition);
+
+            Assert.AreEqual('B', reader.ReadChar());
+        }
+
+        [Test]
         public void ReadsShort()
         {
             Assert.AreEqual(513, new BufferReader(new byte[] { 1, 2 }).ReadShort());

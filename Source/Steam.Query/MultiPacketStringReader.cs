@@ -30,7 +30,7 @@ namespace Steam.Query
             byteEnumerables.Add(_reader.ReadUntil(x => x != 0x00));
             _reader.Skip(1);
 
-            return Encoding.ASCII.GetString(byteEnumerables.SelectMany(x => x).ToArray());
+            return Encoding.UTF8.GetString(byteEnumerables.SelectMany(x => x).ToArray());
         }
     }
 }

@@ -23,6 +23,14 @@ namespace Steam.Query.Tests.UnitTests
         }
 
         [Test]
+        public void WritesUtf8Char()
+        {
+            var builder = new BufferBuilder();
+            builder.WriteChar('猫');
+            Assert.That(builder.ToArray(), new EqualConstraint(new[] { 0xE7, 0x8C, 0xAB }));
+        }
+
+        [Test]
         public void WritesShort()
         {
             var builder = new BufferBuilder();

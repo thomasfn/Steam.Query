@@ -29,7 +29,7 @@ namespace Steam.Query
 
         public void WriteChar(char c)
         {
-            WriteByte((byte)c);
+            WriteBytes(Encoding.UTF8.GetBytes(new [] {c}));
         }
   
         public void WriteShort(ushort n)
@@ -44,7 +44,7 @@ namespace Steam.Query
         
         public void WriteString(string str)
         {
-            WriteBytes(Encoding.ASCII.GetBytes(str));
+            WriteBytes(Encoding.UTF8.GetBytes(str));
             WriteByte(0x00);
         }
 

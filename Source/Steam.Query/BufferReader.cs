@@ -45,7 +45,7 @@ namespace Steam.Query
             if (terminus == -1)
                 return null;
             
-            var str = Encoding.ASCII.GetString(_bytes, CurrentPosition, terminus - CurrentPosition);
+            var str = Encoding.UTF8.GetString(_bytes, CurrentPosition, terminus - CurrentPosition);
             CurrentPosition = terminus + 1;
 
             return str;
@@ -63,7 +63,7 @@ namespace Steam.Query
             if (terminus == -1)
                 terminus = _bytes.Length;
 
-            var str = Encoding.ASCII.GetString(_bytes, CurrentPosition, terminus - CurrentPosition);
+            var str = Encoding.UTF8.GetString(_bytes, CurrentPosition, terminus - CurrentPosition);
             CurrentPosition = terminus + 1;
 
             return str;
@@ -87,7 +87,14 @@ namespace Steam.Query
 
         public char ReadChar()
         {
-            return Encoding.ASCII.GetChars(new[] {ReadByte()}, 0, 1).Single();
+            var charBuffer = new char[1];
+            int bytesUsed;
+            int charsUsed;
+            bool completed;
+            Encoding.UTF8.GetDecoder().Convert(_bytes, CurrentPosition, Math.Min(8, Remaining), charBuffer, 0, 1, true, out bytesUsed, out charsUsed, out completed);
+
+            CurrentPosition += bytesUsed;
+            return charBuffer.Single();
         }
         
         public IEnumerable<byte> ReadUntil(Func<byte, bool> predicate)
