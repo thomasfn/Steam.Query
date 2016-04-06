@@ -6,7 +6,11 @@
         InfoResponse = 0x49,
 
         RulesRequest = 0x56,
-        RulesChallenge = 0x41,
-        RulesResponse = 0x45
+        RulesResponse = 0x45,
+
+        PlayersRequest = 0x55,
+        PlayersResponse = 0x44,
+
+        RequestChallenge = 0x41
     }
 }

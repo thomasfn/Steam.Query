@@ -85,6 +85,14 @@ namespace Steam.Query
             return n;
         }
 
+        public float ReadFloat()
+        {
+            var x = BitConverter.ToSingle(_bytes, CurrentPosition);
+            CurrentPosition += 4;
+
+            return x;
+        }
+
         public char ReadChar()
         {
             var charBuffer = new char[1];

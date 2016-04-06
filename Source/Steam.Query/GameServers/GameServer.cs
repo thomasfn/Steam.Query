@@ -21,6 +21,7 @@ namespace Steam.Query.GameServers
 
         private GameServerRules _rules;
         private GameServerInfo _info;
+        private List<GameServerPlayer> _players;
 
         private static readonly byte[] ServerQueryHeader = {0xFF, 0xFF, 0xFF, 0xFF};
 
@@ -75,6 +76,93 @@ namespace Steam.Query.GameServers
             }
         }
 
+        public async Task<IEnumerable<IGameServerPlayer>> GetServerPlayersAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        {
+            if (forceRefresh || _players == null)
+                return await QueryServerPlayersAsync(timeout ?? DefaultTimeout);
+
+            return _players;
+        }
+
+        public async Task<IEnumerable<IGameServerPlayer>> TryGetServerPlayersAsync(bool forceRefresh = false, TimeSpan? timeout = null)
+        {
+            try
+            {
+                return await GetServerPlayersAsync(forceRefresh, timeout);
+            }
+            catch (TimeoutException)
+            {
+                return null;
+            }
+        }
+
+        private async Task<IEnumerable<IGameServerPlayer>> QueryServerPlayersAsync(TimeSpan timeout)
+        {
+            var task = Task.Run(async () =>
+            {
+                using (var client = SteamAgent.GetUdpClient(EndPoint))
+                {
+                    var requestPacket = GetRequestPacket(GameServerQueryPacketType.PlayersRequest);
+                    requestPacket.WriteLong(-1);
+
+                    var reader = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4);
+
+                    var responseType = reader.ReadEnum<GameServerQueryPacketType>();
+                    
+                    if (responseType != GameServerQueryPacketType.RequestChallenge)
+                        throw new ProtocolViolationException();
+
+                    var challengeNumber = reader.ReadLong();
+                    requestPacket = GetRequestPacket(GameServerQueryPacketType.PlayersRequest);
+                    requestPacket.WriteLong(challengeNumber);
+
+                    reader = await SteamAgent.RequestResponseAsync(client, requestPacket.ToArray(), 4); //seems not to agree with protocol, would expect this 11 bytes earlier...
+                    var receivedAt = DateTime.Now;
+
+                    responseType = reader.ReadEnum<GameServerQueryPacketType>();
+
+                    if (responseType != GameServerQueryPacketType.PlayersResponse)
+                        throw new ProtocolViolationException();
+
+                    var playerCount = reader.ReadByte();
+                    var players = new List<GameServerPlayer>(playerCount);
+
+                    //var packetsReceived = 1;
+                    //Func<Task<BufferReader>> sequelRequestAsyncFunc = async () =>
+                    //{
+                    //    var next = await SteamAgent.ReceiveBufferReaderAsync(client, 12); //protocol unclear, header size determined manually
+                    //    packetsReceived++;
+                    //    return next;
+                    //};
+
+                    //var multiPacketStringReader = new MultiPacketStringReader(reader, sequelRequestAsyncFunc);
+
+                    for (var i = 0; i < playerCount; i++)
+                    {
+                        var position = reader.ReadByte();
+                        //if (position != i)
+                        //    throw new ProtocolViolationException($"Expected literal byte {i}, got {position} (player index)");
+
+                        var name = reader.ReadString();
+                        var score = reader.ReadLong();
+                        var duration = reader.ReadFloat();
+
+                        var connectedAt = receivedAt.Subtract(TimeSpan.FromSeconds(duration));
+
+                        players.Add(new GameServerPlayer(name, score, connectedAt));
+                    }
+
+                    if (players.Count != playerCount)
+                        throw new ArgumentOutOfRangeException($"Expected {playerCount} player blocks, got {players.Count}");
+
+                    _players = players;
+                    return _players;
+                }
+            });
+
+            return await task.TimeoutAfter(timeout);
+        }
+
         private async Task<IGameServerRules> QueryServerRulesAsync(TimeSpan timeout)
         {
             var task = Task.Run(async () =>
@@ -91,7 +179,7 @@ namespace Steam.Query.GameServers
                     if (responseType == GameServerQueryPacketType.RulesResponse)
                         throw new NotImplementedException();
 
-                    if (responseType != GameServerQueryPacketType.RulesChallenge)
+                    if (responseType != GameServerQueryPacketType.RequestChallenge)
                         throw new ProtocolViolationException();
 
                     var challengeNumber = reader.ReadLong();

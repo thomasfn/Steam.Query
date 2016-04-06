@@ -18,6 +18,7 @@ namespace Steam.Query.Tests.IntegrationTests
 
         private const int GetRulesAttempts = 4;
         private const int GetInfoAttempts = 4;
+        private const int GetPlayersAttempts = 4;
 
         [TestFixtureSetUp]
         public void Setup() //Should be async, but isn't currently supported by NUnit
@@ -93,6 +94,45 @@ namespace Steam.Query.Tests.IntegrationTests
             }
 
             Assert.Fail($"Query timed out on all {GetInfoAttempts} attempt(s)");
+        }
+
+        [Test]
+        public async Task GetServerPlayersAsync()
+        {
+            if (!_servers.Any())
+                Assert.Inconclusive();
+
+            for (var i = 0; i < GetPlayersAttempts; i++)
+            {
+                try
+                {
+                    var rng = new Random();
+                    IGameServer server;
+                    IGameServerInfo serverInfo;
+
+                    while (true)
+                    {
+                        server = _servers[rng.Next(_servers.Count)];
+                        serverInfo = await server.TryGetServerInfoAsync(timeout: TimeSpan.FromSeconds(1));
+
+                        if ((serverInfo?.Players ?? 0) >= 2)
+                            break;
+                    }
+
+                    var playerInfos = (await server.GetServerPlayersAsync().TimeoutAfter(TimeSpan.FromSeconds(3)))
+                        .ToList();
+
+                    Assert.That(playerInfos.Count, Is.EqualTo(serverInfo.Players));
+
+                    return;
+                }
+                catch (TimeoutException)
+                {
+
+                }
+            }
+
+            Assert.Fail($"Query timed out on all {GetPlayersAttempts} attempt(s)");
         }
 
     }

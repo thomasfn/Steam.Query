@@ -1,4 +1,5 @@
-﻿using NUnit.Framework;
+﻿using System;
+using NUnit.Framework;
 using NUnit.Framework.Constraints;
 
 namespace Steam.Query.Tests.UnitTests
@@ -100,6 +101,14 @@ namespace Steam.Query.Tests.UnitTests
 
             Assert.IsFalse(reader.IsStringTerminated());
             Assert.AreEqual("ABC", reader.ReadPartialString());
+        }
+
+        [Test]
+        public void ReadsFloat()
+        {
+            var reader = new BufferReader(new byte[] { 133, 235, 85, 65 });
+            
+            Assert.AreEqual(13.37f, reader.ReadFloat());
         }
 
     }
