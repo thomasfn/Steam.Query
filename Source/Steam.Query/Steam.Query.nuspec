@@ -1,15 +1,17 @@
 ﻿<?xml version="1.0"?>
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
-    <id>$id$</id>
-    <version>$version$</version>
-    <authors>$author$</authors>
-    <owners>$author$</owners>
+    <id>Didstopia.Steam.Query</id>
+    <version>1.0.0</version>
+    <authors>dotjosh, robhol</authors>
+    <owners>Didstopia</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>$description$</description>
+    <licenseUrl>https://raw.githubusercontent.com/Didstopia/Steam.Query/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/Didstopia/Steam.Query</projectUrl>
+    <description>An updated fork of a library used for querying the Steam Master Server list.</description>
+    <releaseNotes>Pushing an updated fork.</releaseNotes>
   </metadata>
   <files>
-    <file src="bin\$configuration$\NET40-client\Steam.Query.dll" target="lib\net40-client\" />
     <file src="bin\$configuration$\NET451\Steam.Query.dll" target="lib\net451\" />
   </files>
 </package>
