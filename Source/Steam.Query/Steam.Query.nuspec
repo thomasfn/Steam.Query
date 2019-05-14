@@ -2,7 +2,7 @@
 <package xmlns="http://schemas.microsoft.com/packaging/2010/07/nuspec.xsd">
   <metadata>
     <id>thomasfn.Steam.Query</id>
-    <version>1.0.0</version>
+    <version>1.0.1</version>
     <authors>thomasfn, dotjosh, robhol</authors>
     <owners>thomasfn</owners>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>

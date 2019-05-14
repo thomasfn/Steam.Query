@@ -10,6 +10,8 @@
         <PackageLicenseExpression>MIT</PackageLicenseExpression>
         <Company />
         <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+        <PackageId>thomasfn.Steam.Query</PackageId>
+        <Version>1.0.1</Version>
     </PropertyGroup>
     <ItemGroup>
       <Folder Include="Properties\" />
