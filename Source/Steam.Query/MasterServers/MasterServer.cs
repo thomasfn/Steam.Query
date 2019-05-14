@@ -66,6 +66,35 @@ namespace Steam.Query.MasterServers
             return endPoints.Take(endPoints.Count - 1).Select(e => new GameServer(e));
         }
 
+        public IEnumerable<IGameServer> GetServersLazy(MasterServerRegion region, params IFilter[] filters)
+        {
+            return GetServersLazy(new MasterServerRequest(region, filters));
+        }
+
+        public IEnumerable<IGameServer> GetServersLazy(MasterServerRequest masterServerRequest)
+        {
+            var packet = 0;
+            IPEndPoint lastEndPoint = null;
+            using (var client = SteamAgent.GetUdpClient(_endpoint))
+            {
+                while (!masterServerRequest.MaximumPackets.HasValue || packet < masterServerRequest.MaximumPackets.Value)
+                {
+                    var request = GetRequest(lastEndPoint, masterServerRequest.Region, masterServerRequest.Filters);
+                    var response = AsyncHelper.RunSync(() => SteamAgent.RequestResponseAsync(client, request, IpEndPointLength));
+
+                    packet++;
+
+                    var packetEndPoints = ReadEndPointsFromPacket(response);
+                    foreach (var endPoint in packetEndPoints)
+                    {
+                        if (endPoint.IsEmpty()) yield break;
+                        yield return new GameServer(endPoint);
+                        lastEndPoint = endPoint;
+                    }
+                }
+            }
+        }
+
         private static IEnumerable<IPEndPoint> ReadEndPointsFromPacket(BufferReader reader)
         {
             while (reader.Remaining >= IpEndPointLength)

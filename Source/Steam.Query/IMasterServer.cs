@@ -9,5 +9,7 @@ namespace Steam.Query
     {
         Task<IEnumerable<IGameServer>> GetServersAsync(MasterServerRequest masterServerRequest);
         Task<IEnumerable<IGameServer>> GetServersAsync(MasterServerRegion region, params IFilter[] filters);
+        IEnumerable<IGameServer> GetServersLazy(MasterServerRequest masterServerRequest);
+        IEnumerable<IGameServer> GetServersLazy(MasterServerRegion region, params IFilter[] filters);
     }
 }
