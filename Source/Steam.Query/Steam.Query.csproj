@@ -1,83 +1,17 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Project ToolsVersion="12.0" DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
-  <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
-  <PropertyGroup>
-    <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
-    <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{F839D43E-C738-4C98-8A58-15613F9A1605}</ProjectGuid>
-    <OutputType>Library</OutputType>
-    <AppDesignerFolder>Properties</AppDesignerFolder>
-    <RootNamespace>Steam.Query</RootNamespace>
-    <AssemblyName>Steam.Query</AssemblyName>
-    <TargetFrameworkVersion>v4.5.1</TargetFrameworkVersion>
-    <FileAlignment>512</FileAlignment>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Debug|AnyCPU' ">
-    <DebugSymbols>true</DebugSymbols>
-    <DebugType>full</DebugType>
-    <Optimize>false</Optimize>
-    <OutputPath>bin\Debug\NET451\</OutputPath>
-    <DefineConstants>TRACE;DEBUG;NET45</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <PropertyGroup Condition=" '$(Configuration)|$(Platform)' == 'Release|AnyCPU' ">
-    <DebugType>pdbonly</DebugType>
-    <Optimize>true</Optimize>
-    <OutputPath>bin\Release\NET451\</OutputPath>
-    <DefineConstants>TRACE;NET45</DefineConstants>
-    <ErrorReport>prompt</ErrorReport>
-    <WarningLevel>4</WarningLevel>
-  </PropertyGroup>
-  <ItemGroup>
-    <Reference Include="System" />
-    <Reference Include="System.Core" />
-    <Reference Include="System.Xml.Linq" />
-    <Reference Include="System.Data.DataSetExtensions" />
-    <Reference Include="Microsoft.CSharp" />
-    <Reference Include="System.Data" />
-    <Reference Include="System.Xml" />
-  </ItemGroup>
-  <ItemGroup>
-    <Compile Include="BufferBuilder.cs" />
-    <Compile Include="Extensions.cs" />
-    <Compile Include="GameServers\GameServerEnvironment.cs" />
-    <Compile Include="GameServers\GameServerPlayer.cs" />
-    <Compile Include="GameServers\GameServerType.cs" />
-    <Compile Include="IGameServer.cs" />
-    <Compile Include="IGameServerInfo.cs" />
-    <Compile Include="IGameServerPlayer.cs" />
-    <Compile Include="IGameServerRules.cs" />
-    <Compile Include="MasterServers\Filtering\ConstantFilter.cs" />
-    <Compile Include="MasterServers\Filtering\IFilter.cs" />
-    <Compile Include="MasterServers\Filtering\NandFilter.cs" />
-    <Compile Include="MasterServers\Filtering\NorFilter.cs" />
-    <Compile Include="MasterServers\Filtering\NotFilter.cs" />
-    <Compile Include="IMasterServer.cs" />
-    <Compile Include="MasterServers\MasterServer.cs" />
-    <Compile Include="MasterServers\Filtering\Filter.cs" />
-    <Compile Include="MasterServers\MasterServerQueryPacketType.cs" />
-    <Compile Include="MasterServers\MasterServerRegion.cs" />
-    <Compile Include="MasterServers\MasterServerRequest.cs" />
-    <Compile Include="MultiPacketStringReader.cs" />
-    <Compile Include="Properties\AssemblyInfo.cs" />
-    <Compile Include="BufferReader.cs" />
-    <Compile Include="GameServers\GameServer.cs" />
-    <Compile Include="GameServers\GameServerInfo.cs" />
-    <Compile Include="GameServers\GameServerQueryPacketType.cs" />
-    <Compile Include="GameServers\GameServerRules.cs" />
-    <Compile Include="SteamAgent.cs" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="Steam.Query.nuspec" />
-  </ItemGroup>
-  <ItemGroup />
-  <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
-       Other similar extension points exist, see Microsoft.Common.targets.
-  <Target Name="BeforeBuild">
-  </Target>
-  <Target Name="AfterBuild">
-  </Target>
-  -->
+﻿<Project Sdk="Microsoft.NET.Sdk">
+    <PropertyGroup>
+        <TargetFrameworks>netstandard2.0</TargetFrameworks>
+        <Description>Library for querying the Steam Master Server list</Description>
+        <Authors>thomasfn</Authors>
+        <Copyright>MIT License</Copyright>
+        <PackageProjectUrl>https://github.com/thomasfn/Steam.Query</PackageProjectUrl>
+        <RepositoryUrl>https://github.com/thomasfn/Steam.Query</RepositoryUrl>
+        <RepositoryType>git</RepositoryType>
+        <PackageLicenseExpression>MIT</PackageLicenseExpression>
+        <Company />
+        <GeneratePackageOnBuild>true</GeneratePackageOnBuild>
+    </PropertyGroup>
+    <ItemGroup>
+      <Folder Include="Properties\" />
+    </ItemGroup>
 </Project>
